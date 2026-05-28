@@ -1,0 +1,37 @@
+# 风控配置
+# 请先复制本文件为 risk.yaml
+
+# 单笔风控
+single_order:
+  max_order_amount_usd: 5000.0      # 单笔最大下单金额 (USD)
+  max_order_quantity: 100           # 单笔最大下单股数
+  min_order_quantity: 1             # 单笔最小下单股数
+  allowed_order_types:
+    - "LIMIT"                       # MVP 仅允许限价单
+
+# 持仓风控
+position:
+  max_single_position_amount_usd: 20000.0  # 单标的最大持仓金额
+  max_total_position_amount_usd: 100000.0  # 总持仓金额上限
+  max_positions_count: 10                  # 最大持仓标的数
+
+# 日度风控
+daily:
+  max_order_count: 50               # 单日最大下单次数
+  max_loss_usd: 5000.0              # 单日最大亏损阈值 (先预留接口)
+
+# 信号风控
+signal:
+  cooldown_seconds: 300             # 同一标的信号冷却时间 (秒)
+  require_market_data: true         # 必须有行情才能下单
+
+# 启用的风控检查项
+enabled_checks:
+  - max_order_amount
+  - max_order_quantity
+  - allowed_order_type
+  - position_limit
+  - daily_order_count
+  - signal_cooldown
+  - market_data_required
+  # - daily_loss_limit       # MVP 暂不启用

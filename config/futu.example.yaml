@@ -1,0 +1,30 @@
+# Futu OpenAPI / OpenD 配置
+# 请先复制本文件为 futu.yaml 并填入真实值
+
+# 交易环境: SIMULATE 或 REAL
+# 警告: 默认必须为 SIMULATE，切勿直接改为 REAL
+environment: SIMULATE
+
+# OpenD 连接配置
+opend:
+  host: "127.0.0.1"
+  port: 11111          # Futu OpenD 默认监听端口
+  enable_ssl: false    # 本地连接通常关闭 SSL
+
+# 交易密码（留空表示使用 OpenD 已保存的解锁密码）
+# 警告: 请勿将真实密码提交到版本控制
+trade_password: ""
+
+# 市场配置
+market:
+  default_market: "US"        # 默认市场
+  subscribe_symbols:
+    - "US.AAPL"
+    - "US.TSLA"
+    - "US.SPY"
+
+# 日志与重连
+connection:
+  heartbeat_interval: 10      # 秒
+  auto_reconnect: true
+  max_reconnect_attempts: 5

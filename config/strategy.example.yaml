@@ -1,0 +1,29 @@
+# 策略配置
+# 请先复制本文件为 strategy.yaml
+
+# MovingAverageCrossStrategy 配置
+moving_average_cross:
+  # 订阅标的
+  symbols:
+    - "US.AAPL"
+    - "US.TSLA"
+
+  # K线周期 (vn.py 格式: 1m, 5m, 15m, 1h, 1d)
+  interval: "1m"
+
+  # 均线参数
+  short_window: 5
+  long_window: 20
+
+  # 交易参数
+  order_type: "LIMIT"
+  limit_price_offset: 0.01          # 限价单偏移 ($)
+  quantity: 10                      # 每次下单股数
+
+  # 风控相关
+  check_risk_before_order: true     # 下单前必须通过风控检查
+
+# 全局策略设置
+global:
+  strategy_class: "MovingAverageCrossStrategy"
+  bar_buffer_size: 100              # 每个标的保留的 K 线数量
