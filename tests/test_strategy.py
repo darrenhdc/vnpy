@@ -40,7 +40,7 @@ class TestStrategy:
             "interval": "1m",
             "short_window": 3,
             "long_window": 5,
-            "quantity": 10,
+            "order_amount_usd": 3000.0,
             "limit_price_offset": 0.01,
             "check_risk_before_order": False  # 测试中关闭风控，专注信号
         }

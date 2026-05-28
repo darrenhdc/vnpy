@@ -7,6 +7,9 @@ PyYAML>=6.0
 numpy>=1.24.0
 pandas>=2.0.0
 
+# --- 数据 ---
+yfinance>=0.2.0
+
 # --- vn.py 生态 ---
 # 注意：vnpy 需通过 whl 或源码安装，详见 README
 # vnpy>=3.9.0

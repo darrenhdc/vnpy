@@ -18,7 +18,23 @@ moving_average_cross:
   # 交易参数
   order_type: "LIMIT"
   limit_price_offset: 0.01          # 限价单偏移 ($)
-  quantity: 10                      # 每次下单股数
+  order_amount_usd: 3000.0          # 每次下单目标金额 (USD)，自动计算股数
+
+  # 风控相关
+  check_risk_before_order: true     # 下单前必须通过风控检查
+
+# RSI 策略配置
+rsi:
+  symbols:
+    - "US.AAPL"
+    - "US.SPY"
+  interval: "1h"
+  rsi_period: 14
+  oversold: 30.0
+  overbought: 70.0
+  order_amount_usd: 3000.0
+  limit_price_offset: 0.01
+  check_risk_before_order: true
 
   # 风控相关
   check_risk_before_order: true     # 下单前必须通过风控检查

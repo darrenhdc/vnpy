@@ -43,7 +43,8 @@ class RiskEngine:
         self._latest_prices[symbol] = price
 
     def check_order(self, symbol: str, direction: str, order_type: str,
-                    price: float, quantity: int, strategy_name: str = "") -> RiskCheckResult:
+                    price: float, quantity: int, strategy_name: str = "",
+                    bar_time: Optional[str] = None) -> RiskCheckResult:
         """
         统一订单风控检查。
         direction: "BUY" / "SELL"
@@ -122,8 +123,16 @@ class RiskEngine:
         if "signal_cooldown" in enabled:
             cooldown_sec = self.config.get("signal", {}).get("cooldown_seconds", 300)
             last_time = self._signal_cooldown.get(symbol)
-            if last_time and (datetime.now() - last_time).total_seconds() < cooldown_sec:
-                reason = f"标的 {symbol} 信号冷却中，距离上次信号仅 {(datetime.now()-last_time).total_seconds():.0f} 秒"
+            # 回测兼容: 如果有 bar_time，使用 bar_time；否则用系统时间
+            if bar_time:
+                try:
+                    current_time = datetime.fromisoformat(bar_time.replace("Z", "+00:00"))
+                except Exception:
+                    current_time = datetime.now()
+            else:
+                current_time = datetime.now()
+            if last_time and (current_time - last_time).total_seconds() < cooldown_sec:
+                reason = f"标的 {symbol} 信号冷却中，距离上次信号仅 {(current_time-last_time).total_seconds():.0f} 秒"
                 self._log_rejection(reason, details)
                 return RiskCheckResult(False, reason, details)
 
@@ -147,9 +156,15 @@ class RiskEngine:
         logger.info(f"[RiskEngine] 订单通过风控检查: {symbol} {direction} {quantity}@{price}")
         return RiskCheckResult(True, "approved", details)
 
-    def record_signal(self, symbol: str):
+    def record_signal(self, symbol: str, bar_time: Optional[str] = None):
         """记录信号触发时间，用于冷却控制。"""
-        self._signal_cooldown[symbol] = datetime.now()
+        if bar_time:
+            try:
+                self._signal_cooldown[symbol] = datetime.fromisoformat(bar_time.replace("Z", "+00:00"))
+            except Exception:
+                self._signal_cooldown[symbol] = datetime.now()
+        else:
+            self._signal_cooldown[symbol] = datetime.now()
         logger.info(f"[RiskEngine] 记录 {symbol} 信号时间: {self._signal_cooldown[symbol]}")
 
     def _log_rejection(self, reason: str, details: Dict[str, Any]):
