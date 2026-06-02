@@ -30,11 +30,16 @@ class BaseStrategy(ABC):
         self.limit_price_offset: float = config.get("limit_price_offset", 0.01)
         self.check_risk: bool = config.get("check_risk_before_order", True)
         self.dry_run: bool = config.get("dry_run", True)
+        self.max_daily_loss_pct: float = config.get("max_daily_loss_pct", 5.0)  # circuit breaker
 
         self._bars: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
         self._positions: Dict[str, Optional[str]] = {s: None for s in self.symbols}
         self._bar_count: Dict[str, int] = defaultdict(int)
         self._filled_orders: list = []
+        self._daily_pnl: float = 0.0
+        self._daily_pnl_date: str = ""
+        self._start_equity: float = self.order_amount_usd * 10
+        self._circuit_broken: bool = False
 
         # Paper trading state
         self._data_dir = Path("data") / self.name
@@ -154,6 +159,8 @@ class BaseStrategy(ABC):
 
     # ========================================================== Signal → Order
     def _handle_signal(self, symbol: str, signal_type: str, close_price: float, bar_time: Optional[str] = None):
+        if self._circuit_broken:
+            return
         direction = "BUY" if signal_type == "BUY" else "SELL"
         quantity = self._calculate_quantity(close_price)
         if quantity <= 0:
@@ -195,6 +202,44 @@ class BaseStrategy(ABC):
         if direction == "BUY": return close_price + self.limit_price_offset
         return close_price - self.limit_price_offset
 
+    # ========================================================== Safety: circuit breaker + position sync
+    def _check_circuit_breaker(self, current_pnl: float) -> bool:
+        today = datetime.now().strftime("%Y-%m-%d")
+        if self._daily_pnl_date != today:
+            self._daily_pnl = 0.0
+            self._daily_pnl_date = today
+            self._circuit_broken = False
+        self._daily_pnl += current_pnl
+        if self._start_equity > 0 and abs(self._daily_pnl) / self._start_equity > self.max_daily_loss_pct / 100:
+            self._circuit_broken = True
+            logger.error(f"[{self.name}] CIRCUIT BREAKER: daily loss {self._daily_pnl:.2f} > {self.max_daily_loss_pct}%")
+            return True
+        return False
+
+    def sync_positions_from_futu(self):
+        """Pull current positions from Futu on startup (dry_run skips)."""
+        if self.dry_run:
+            return
+        try:
+            from futu import OpenSecTradeContext, TrdEnv
+            host = os.getenv("FUTU_HOST", "127.0.0.1")
+            port = int(os.getenv("FUTU_PORT", "11111"))
+            ctx = OpenSecTradeContext(host=host, port=port)
+            ret, data = ctx.position_list_query(trd_env=TrdEnv.SIMULATE)
+            if ret == 0 and len(data) > 0:
+                for _, row in data.iterrows():
+                    sym = row["code"]
+                    if sym in self.symbols:
+                        qty = int(row["qty"])
+                        if qty > 0:
+                            self._positions[sym] = "LONG"
+                        elif qty < 0:
+                            self._positions[sym] = "SHORT"
+                        logger.info(f"[{self.name}] Synced position: {sym} qty={qty} side={self._positions[sym]}")
+            ctx.close()
+        except Exception as e:
+            logger.warning(f"[{self.name}] Position sync failed: {e}")
+
     # ========================================================== Order execution
     def _send_order(self, symbol: str, direction: str, close_price: float, quantity: int):
         limit_price = self._limit_price(close_price, direction)
@@ -217,34 +262,33 @@ class BaseStrategy(ABC):
 
         # Live mode: attempt real Futu order
         try:
-            from futu import OpenSecTradeContext, TrdEnv, TrdSide, OrderType, TrdMarket
-            from config.settings import get_app_config
-            cfg = get_app_config()
-            opend = cfg.futu.get("opend", {})
-            host = opend.get("host", "127.0.0.1")
-            port = opend.get("port", 11111)
-            env = TrdEnv.SIMULATE if cfg.is_simulate() else TrdEnv.REAL
-
+            from futu import OpenSecTradeContext, TrdEnv, TrdSide, OrderType
+            host = os.getenv("FUTU_HOST", "127.0.0.1")
+            port = int(os.getenv("FUTU_PORT", "11111"))
             trd_ctx = OpenSecTradeContext(host=host, port=port)
-
             ret, data = trd_ctx.place_order(
                 price=limit_price,
                 qty=quantity,
                 code=symbol,
                 trd_side=TrdSide.BUY if direction == "BUY" else TrdSide.SELL,
                 order_type=OrderType.NORMAL,
-                trd_env=env,
-                trd_market=TrdMarket.US,
+                trd_env=TrdEnv.SIMULATE,
             )
             if ret != 0:
-                err_msg = str(data)
-                if "unlock" in err_msg.lower() or "密码" in err_msg or "password" in err_msg.lower():
-                    logger.warning(f"[{self.name}] OpenD 交易未解锁。请在 OpenD GUI 中点击[交易]并输入密码解锁")
-                else:
-                    logger.error(f"[{self.name}] Futu order failed: {err_msg}")
+                logger.error(f"[{self.name}] Futu order failed: {data}")
                 trd_ctx.close()
                 return
-            logger.info(f"[{self.name}] Futu order placed: {direction} {symbol} {quantity}@{limit_price:.2f} env={env}")
+            logger.info(f"[{self.name}] Futu order placed: {direction} {symbol} {quantity}@{limit_price:.2f}")
+            # Check fill after short delay
+            time.sleep(2)
+            try:
+                ret2, fills = trd_ctx.order_list_query()
+                if ret2 == 0 and len(fills) > 0:
+                    last = fills.iloc[-1]
+                    status = last.get("order_status", "")
+                    logger.info(f"[{self.name}] Order status: {status}")
+            except Exception:
+                pass
             trd_ctx.close()
         except ImportError:
             logger.warning(f"[{self.name}] futu-api not installed, falling back to dry_run")
@@ -253,6 +297,7 @@ class BaseStrategy(ABC):
             return
         except Exception as e:
             logger.error(f"[{self.name}] Futu order error: {e}")
+            return
             return
 
         # Record to DB regardless
