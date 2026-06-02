@@ -7,10 +7,12 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 
 from strategies.base_strategy import BaseStrategy
+from strategies.registry import StrategyRegistry
 
 logger = logging.getLogger(__name__)
 
 
+@StrategyRegistry.register("rsi")
 class RsiStrategy(BaseStrategy):
     """
     RSI (相对强弱指数) 策略。

@@ -11,7 +11,7 @@
 
 ## 当前状态（2026-06-02）
 
-**MVP 阶段。** 框架骨架完成（配置→数据→风控→策略→监控），但核心执行路径未接入真实 Futu 下单 API，研究流水线完全缺失。
+**P1 阶段完成。** 框架骨架 + 研究流水线 + 策略插件架构 + SOTA 追踪 + Heartbeat 监控 + CLI 工具全部就绪。等待 OpenD 首次登录后即可接入实时行情跑模拟盘。
 
 ## 项目进度锚点
 
@@ -23,31 +23,25 @@
 | 2 | 数据库 | `data/database.py` | SQLite 7 表（bars/signals/orders/trades/positions/snapshots/risk） |
 | 3 | 数据下载 | `data/yahoo_feeder.py` | Yahoo Finance 历史数据（1m~1mo） |
 | 4 | 实时行情 | `data/live_engine.py` | vn.py EventEngine 封装，自动降级 mock |
-| 5 | 风控引擎 | `risk/risk_engine.py` | 8 项检查规则 |
-| 6 | 策略基类 | `strategies/base_strategy.py` | ABC 抽象框架 |
-| 7 | MA 交叉策略 | `strategies/moving_average_cross.py` | 金叉买死叉卖 |
-| 8 | RSI 策略 | `strategies/rsi_strategy.py` | 超买超卖 |
-| 9 | 回测脚本 | `scripts/backtest.py` | Yahoo 数据回放 + PnL 分析 |
+| 5 | 风控引擎 | `risk/risk_engine.py` | 8 项检查规则，回测冷却兼容 bar_time |
+| 6 | 策略基类 | `strategies/base_strategy.py` | ABC 抽象框架，按金额下单 |
+| 7 | MA 交叉策略 | `strategies/moving_average_cross.py` | 金叉买死叉卖，已注册到 registry |
+| 8 | RSI 策略 | `strategies/rsi_strategy.py` | 超买超卖，已注册到 registry |
+| 9 | 回测脚本 | `scripts/backtest.py` | Yahoo 数据回放 + PnL / 胜率 / MaxDD 分析 |
 | 10 | 健康检查 | `monitor/healthcheck.py` | OpenD 端口可达性检查 |
-| 11 | 单元测试 | `tests/` | 4 个 pytest 测试文件 |
+| 11 | 单元测试 | `tests/` | 4 个 pytest 测试文件，13/13 通过 |
+| 12 | 研究流水线 | `research/data_loader.py` + `research/backtest.py` | 向量化特征工程 + 回测引擎 |
+| 13 | Paper Trading | `scripts/run_headless.py` | dry_run 模式 + 实时引擎占位 |
+| 14 | **策略插件架构** | `strategies/registry.py` + `strategies/core.py` | `@register` 装饰器 + FeatureEngine/SignalBuffer/StateTracker |
+| 15 | **SOTA 追踪** | `research/SOTA.md` + `research/TEMPLATE.md` | 当前 SOTA / 候选池 / 演化史 / 8 阶段报告模板 |
+| 16 | **Heartbeat 监控** | `monitor/heartbeat.py` | CLI/JSON/HTTP 三种输出模式 |
+| 17 | **CLI 工具** | `scripts/sota.py` + `scripts/performance.py` + `scripts/archived.py` | SOTA 管理 / 绩效查询 / 归档清理 |
 
-### 🚧 P0 待办
-
-| # | 项目 | 估时 | 说明 |
-|---|------|------|------|
-| 1 | **接入真实 Futu 下单** | ~2h | 替换 `_send_order()` 的模拟逻辑 |
-| 2 | **研究流水线** | ~4h | data_loader + 向量化回测 + walk_forward |
-| 3 | **Paper Trading 模式** | ~1h | dry_run + paper_state.json + paper_trades.jsonl |
-| 4 | **AGENTS.md（本文件）** | ~1h | 项目规则 + 进度锚点 |
-
-### 🟡 P1 待办
+### 🚧 P0 剩余
 
 | # | 项目 | 估时 | 说明 |
 |---|------|------|------|
-| 5 | **策略插件架构** | ~3h | registry.py + 共享决策核心 |
-| 6 | **SOTA 追踪** | ~2h | SOTA.md + 候选报告模板 + 演化史 |
-| 7 | **Heartbeat 监控** | ~1h | CLI/JSON/HTTP 健康检查 |
-| 8 | **CLI 工具** | ~1h | ./sota / ./archived / ./performance |
+| 1 | **接入真实 Futu 下单** | ~2h | 等待 OpenD 登录完成，替换 `_send_order()` 为 Gateway 真实下单 |
 
 ### 🟢 P2 待办
 
@@ -60,13 +54,13 @@
 ## 研究 SOP（继承自 A02）
 
 1. **Idea** — 写清楚假设、预期盈利 regime、预期失败 regime
-2. **Research** — 用 `data_loader.py` 验证信号 IC
+2. **Research** — 用 `research/backtest.py` + `research/data_loader.py` 验证信号 IC
 3. **Parameter Search** — 小范围、假设驱动的网格搜索
 4. **Walk-Forward** — 18m train / 3m test / 3m step / 12m holdout
-5. **Candidate Report** — 标准格式产出
+5. **Candidate Report** — 使用 `research/TEMPLATE.md` 标准格式产出到 `research/reports/`
 6. **Paper** — dry_run paper trading
-7. **Small Live** — 小资金上线
-8. **Monitor** — 日检/周检
+7. **Small Live** — 小资金上线（仅限 SIMULATE）
+8. **Monitor** — 日检/周检，用 `scripts/sota.py` 和 `scripts/performance.py`
 
 ## 硬性约束
 
@@ -87,6 +81,14 @@
 | `data/database.py` | SQLite 封装 |
 | `data/yahoo_feeder.py` | 历史数据 |
 | `strategies/base_strategy.py` | 策略基类 |
+| `strategies/registry.py` | 策略注册表 |
+| `strategies/core.py` | 共享决策核心（FeatureEngine / SignalBuffer / StateTracker） |
 | `risk/risk_engine.py` | 风控引擎 |
 | `scripts/backtest.py` | 回测脚本 |
 | `scripts/run_headless.py` | 无头运行 |
+| `scripts/sota.py` | SOTA 管理 CLI |
+| `scripts/performance.py` | 绩效查询 CLI |
+| `scripts/archived.py` | 归档管理 CLI |
+| `monitor/heartbeat.py` | Heartbeat 健康检查 |
+| `research/SOTA.md` | SOTA 追踪 |
+| `research/TEMPLATE.md` | 候选报告模板 |

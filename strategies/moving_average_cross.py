@@ -7,10 +7,12 @@ from typing import Any, Dict, Optional
 import numpy as np
 
 from strategies.base_strategy import BaseStrategy
+from strategies.registry import StrategyRegistry
 
 logger = logging.getLogger(__name__)
 
 
+@StrategyRegistry.register("ma_cross")
 class MovingAverageCrossStrategy(BaseStrategy):
     """
     双均线交叉策略 (分钟级)。
