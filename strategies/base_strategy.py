@@ -217,36 +217,50 @@ class BaseStrategy(ABC):
 
         # Live mode: attempt real Futu order
         try:
-            from futu import OpenSecTradeContext, TrdEnv, TrdSide, OrderType
-            host = os.getenv("FUTU_HOST", "127.0.0.1")
-            port = int(os.getenv("FUTU_PORT", "11111"))
+            from futu import OpenSecTradeContext, TrdEnv, TrdSide, OrderType, TrdMarket
+            from config.settings import get_app_config
+            cfg = get_app_config()
+            opend = cfg.futu.get("opend", {})
+            host = opend.get("host", "127.0.0.1")
+            port = opend.get("port", 11111)
+            env = TrdEnv.SIMULATE if cfg.is_simulate() else TrdEnv.REAL
+
             trd_ctx = OpenSecTradeContext(host=host, port=port)
+
             ret, data = trd_ctx.place_order(
                 price=limit_price,
                 qty=quantity,
                 code=symbol,
                 trd_side=TrdSide.BUY if direction == "BUY" else TrdSide.SELL,
                 order_type=OrderType.NORMAL,
-                trd_env=TrdEnv.SIMULATE,
+                trd_env=env,
+                trd_market=TrdMarket.US,
             )
             if ret != 0:
-                logger.error(f"[{self.name}] Futu order failed: {data}")
+                err_msg = str(data)
+                if "unlock" in err_msg.lower() or "密码" in err_msg or "password" in err_msg.lower():
+                    logger.warning(f"[{self.name}] OpenD 交易未解锁。请在 OpenD GUI 中点击[交易]并输入密码解锁")
+                else:
+                    logger.error(f"[{self.name}] Futu order failed: {err_msg}")
+                trd_ctx.close()
                 return
-            logger.info(f"[{self.name}] Futu order placed: {direction} {symbol} {quantity}@{limit_price:.2f}")
+            logger.info(f"[{self.name}] Futu order placed: {direction} {symbol} {quantity}@{limit_price:.2f} env={env}")
             trd_ctx.close()
         except ImportError:
             logger.warning(f"[{self.name}] futu-api not installed, falling back to dry_run")
             self.dry_run = True
             self._send_order(symbol, direction, close_price, quantity)
+            return
         except Exception as e:
             logger.error(f"[{self.name}] Futu order error: {e}")
+            return
 
         # Record to DB regardless
         self.db.insert_order({
             "order_id": order_id, "symbol": symbol, "direction": direction,
             "order_type": "LIMIT", "price": round(limit_price, 2),
             "quantity": quantity, "status": "SUBMITTED",
-            "exchange": "FUTU", "account_id": os.getenv("FUTU_ACCOUNT", "SIMULATE"),
+            "exchange": "FUTU", "account_id": "SIMULATE",
         })
         self._positions[symbol] = "LONG" if direction == "BUY" else "SHORT"
 

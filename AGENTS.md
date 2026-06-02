@@ -11,7 +11,7 @@
 
 ## 当前状态（2026-06-02）
 
-**P1 阶段完成。** 框架骨架 + 研究流水线 + 策略插件架构 + SOTA 追踪 + Heartbeat 监控 + CLI 工具全部就绪。等待 OpenD 首次登录后即可接入实时行情跑模拟盘。
+**P0 + P1 阶段完成。** 框架骨架 + 研究流水线 + 策略插件架构 + SOTA 追踪 + Heartbeat 监控 + CLI 工具 + Futu OpenD 实时行情接入全部就绪。OpenD 已登录，实时行情可接收，真实下单接口已就绪（待解锁）。
 
 ## 项目进度锚点
 
@@ -22,28 +22,23 @@
 | 1 | 配置管理 | `config/settings.py` | YAML 统一配置 + SIMULATE 强制检查 |
 | 2 | 数据库 | `data/database.py` | SQLite 7 表（bars/signals/orders/trades/positions/snapshots/risk） |
 | 3 | 数据下载 | `data/yahoo_feeder.py` | Yahoo Finance 历史数据（1m~1mo） |
-| 4 | 实时行情 | `data/live_engine.py` | vn.py EventEngine 封装，自动降级 mock |
+| 4 | 实时行情 | `data/live_engine.py` | **futu-api 直接连接 OpenD**，vn.py 兼容层保留，自动降级 mock |
 | 5 | 风控引擎 | `risk/risk_engine.py` | 8 项检查规则，回测冷却兼容 bar_time |
-| 6 | 策略基类 | `strategies/base_strategy.py` | ABC 抽象框架，按金额下单 |
+| 6 | 策略基类 | `strategies/base_strategy.py` | ABC 抽象框架，按金额下单，dry_run / 真实 Futu 下单双模式 |
 | 7 | MA 交叉策略 | `strategies/moving_average_cross.py` | 金叉买死叉卖，已注册到 registry |
 | 8 | RSI 策略 | `strategies/rsi_strategy.py` | 超买超卖，已注册到 registry |
 | 9 | 回测脚本 | `scripts/backtest.py` | Yahoo 数据回放 + PnL / 胜率 / MaxDD 分析 |
 | 10 | 健康检查 | `monitor/healthcheck.py` | OpenD 端口可达性检查 |
 | 11 | 单元测试 | `tests/` | 4 个 pytest 测试文件，13/13 通过 |
 | 12 | 研究流水线 | `research/data_loader.py` + `research/backtest.py` | 向量化特征工程 + 回测引擎 |
-| 13 | Paper Trading | `scripts/run_headless.py` | dry_run 模式 + 实时引擎占位 |
+| 13 | Paper Trading | `scripts/run_headless.py` | dry_run 模式 + 实时引擎占位，**支持 OpenD 预热 + 实时订阅** |
 | 14 | **策略插件架构** | `strategies/registry.py` + `strategies/core.py` | `@register` 装饰器 + FeatureEngine/SignalBuffer/StateTracker |
 | 15 | **SOTA 追踪** | `research/SOTA.md` + `research/TEMPLATE.md` | 当前 SOTA / 候选池 / 演化史 / 8 阶段报告模板 |
 | 16 | **Heartbeat 监控** | `monitor/heartbeat.py` | CLI/JSON/HTTP 三种输出模式 |
 | 17 | **CLI 工具** | `scripts/sota.py` + `scripts/performance.py` + `scripts/archived.py` | SOTA 管理 / 绩效查询 / 归档清理 |
+| 18 | **真实 Futu 下单** | `strategies/base_strategy.py` `_send_order()` | `OpenSecTradeContext.place_order()` 已接入，**待 OpenD 解锁密码** |
 
-### 🚧 P0 剩余
-
-| # | 项目 | 估时 | 说明 |
-|---|------|------|------|
-| 1 | **接入真实 Futu 下单** | ~2h | 等待 OpenD 登录完成，替换 `_send_order()` 为 Gateway 真实下单 |
-
-### 🟢 P2 待办
+### 🟡 P2 待办
 
 | # | 项目 | 估时 | 说明 |
 |---|------|------|------|
@@ -80,12 +75,13 @@
 | `config/strategy.yaml` | 策略参数 |
 | `data/database.py` | SQLite 封装 |
 | `data/yahoo_feeder.py` | 历史数据 |
-| `strategies/base_strategy.py` | 策略基类 |
+| `data/live_engine.py` | **futu-api 实时行情** |
+| `strategies/base_strategy.py` | 策略基类（dry_run + 真实下单） |
 | `strategies/registry.py` | 策略注册表 |
 | `strategies/core.py` | 共享决策核心（FeatureEngine / SignalBuffer / StateTracker） |
 | `risk/risk_engine.py` | 风控引擎 |
 | `scripts/backtest.py` | 回测脚本 |
-| `scripts/run_headless.py` | 无头运行 |
+| `scripts/run_headless.py` | 无头运行（OpenD 实时） |
 | `scripts/sota.py` | SOTA 管理 CLI |
 | `scripts/performance.py` | 绩效查询 CLI |
 | `scripts/archived.py` | 归档管理 CLI |

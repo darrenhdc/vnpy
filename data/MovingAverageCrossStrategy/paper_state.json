@@ -1,9 +1,9 @@
 {
   "paper_session_id": "MovingAverageCrossStrategy-1780411407",
-  "updated_at": 1780411407,
+  "updated_at": 1780411981,
   "strategy": "MovingAverageCrossStrategy",
   "paper_equity": 30000.0,
-  "paper_cash": 27029.73,
-  "paper_trade_count": 2,
+  "paper_cash": 18118.92,
+  "paper_trade_count": 8,
   "dry_run": true
 }
