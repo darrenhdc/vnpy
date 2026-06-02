@@ -11,7 +11,7 @@
 
 ## 当前状态（2026-06-02）
 
-**vnpy 迁移 + 消融实验完成。** 执行层已迁移到 vnpy CtaTemplate 兼容层（`strategies/vnpy_compat.py`），研究层完整保留。NVDA/SPY/QQQ 单资产消融实验已产出，MACD 策略已创建，OpenD 实时行情接入已验证。
+**vnpy 迁移 + 消融实验完成 + MA+RSI 双确认策略创建。** 执行层已迁移到 vnpy CtaTemplate 兼容层（`strategies/vnpy_compat.py`），研究层完整保留。NVDA/SPY/QQQ 单资产消融实验已产出。SPY MA Cross (5/15) 是当前 SOTA（Sharpe 1.34），等待明晚 OpenD 实时验证。MA+RSI 双确认版本已创建，过滤交易数 80%，回报持平。下一步优先级：OpenD 实盘 → RSI 双确认回测 → 实盘校准。
 
 ## 项目进度锚点
 
@@ -27,13 +27,14 @@
 | 6 | MA 交叉策略 | `strategies/vnpy_ma_cross.py` | 继承 CtaTemplate，fast/slow 可配置 |
 | 7 | RSI 策略 | `strategies/vnpy_rsi.py` | 继承 CtaTemplate，oversold/overbought 可配置 |
 | 8 | MACD 策略 | `strategies/vnpy_macd.py` | 继承 CtaTemplate，fast/slow/signal 可配置 |
-| 9 | 回测引擎 | `research/backtest.py` | **参数搜索 bug 已修复**，generate_signals 支持 kwargs |
-| 10 | Walk-Forward | `research/walk_forward.py` | 18m/3m WF + holdout 验证 |
-| 11 | 因子 IC | `research/factor_ic.py` | 滚动 Spearman IC / IR / 正相关占比 |
-| 12 | 消融实验 | `research/reports/` | NVDA / SPY / QQQ 三份候选报告 |
-| 13 | SOTA 追踪 | `research/SOTA.md` | 当前 SOTA / 候选池 / 演化史 |
-| 14 | CLI 工具 | `scripts/sota.py` + `performance.py` + `archived.py` | SOTA 管理 / 绩效查询 / 归档清理 |
-| 15 | 单元测试 | `tests/` | 8/8 通过（配置 + 数据库 + 3 个策略信号） |
+| 9 | **MA+RSI 双确认** | `strategies/vnpy_ma_rsi_confirm.py` | MA Cross 主信号 + RSI 入场过滤 |
+| 10 | 回测引擎 | `research/backtest.py` | **参数搜索 bug 已修复**，generate_signals 支持 kwargs |
+| 11 | Walk-Forward | `research/walk_forward.py` | 18m/3m WF + holdout 验证 |
+| 12 | 因子 IC | `research/factor_ic.py` | 滚动 Spearman IC / IR / 正相关占比 |
+| 13 | 消融实验 | `research/reports/` | NVDA / SPY / QQQ 三份候选报告 |
+| 14 | SOTA 追踪 | `research/SOTA.md` | 当前 SOTA / 候选池 / 演化史 |
+| 15 | CLI 工具 | `scripts/sota.py` + `performance.py` + `archived.py` | SOTA 管理 / 绩效查询 / 归档清理 |
+| 16 | 单元测试 | `tests/` | 8/8 通过（配置 + 数据库 + 3 个策略信号） |
 
 ### 🟡 P2 待办
 
@@ -72,6 +73,7 @@
 | `strategies/vnpy_ma_cross.py` | MA 交叉策略（vnpy 接口） |
 | `strategies/vnpy_macd.py` | MACD 策略（vnpy 接口） |
 | `strategies/vnpy_rsi.py` | RSI 策略（vnpy 接口） |
+| `strategies/vnpy_ma_rsi_confirm.py` | MA+RSI 双确认策略（vnpy 接口） |
 | `research/data_loader.py` | 向量化特征工程 |
 | `research/backtest.py` | 向量化回测引擎 |
 | `research/walk_forward.py` | Walk-Forward 验证 |

@@ -10,16 +10,16 @@
 | 属性 | 值 |
 |------|-----|
 | **策略名** | VnpyMaCrossStrategy |
-| **版本** | v1.0.0 |
-| **描述** | 双均线交叉 (MA5/MA20)，日级，long-only |
-| **标的** | US.NVDA (消融实验主资产) |
-| **Sharpe** | 1.058 (全周期回测) |
-| **MaxDD** | -11.8% |
-| **Ann.Ret** | +9.2% |
-| **胜率** | 50% (40B/40S) |
-| **IC (20d)** | -0.035 (MA), +0.081 (MACD) |
-| **活跃状态** | Research (WF Holdout 失效，不推荐上线) |
-| **上线日期** | 2026-06-02 |
+| **版本** | v1.1.0-SPY |
+| **描述** | 双均线交叉 (MA5/MA15)，日级，long-only |
+| **标的** | US.SPY |
+| **Sharpe** | 1.34 (全周期回测) |
+| **MaxDD** | -10.2% |
+| **Ann.Ret** | +14.6% |
+| **胜率** | 47% (18B/17S) |
+| **IC (20d)** | +0.103 (RSI), +0.081 (MACD) |
+| **活跃状态** | **Paper Trading** — 等待明晚 OpenD 实时验证 |
+| **上线日期** | 2026-06-02 (SPY 候选报告) |
 
 ---
 
@@ -27,9 +27,11 @@
 
 | 策略 | 状态 | Sharpe | MaxDD | 说明 |
 |------|------|--------|-------|------|
-| VnpyMaCrossStrategy | Research | 1.058 | -11.8% | NVDA 全周期最好，但 WF Holdout -0.63 |
+| VnpyMaCrossStrategy | Paper | 1.34 | -10.2% | **SPY** 全周期最好，WF Holdout +1.62 |
+| VnpyMaCrossStrategy | Research | 1.058 | -11.8% | **NVDA** 全周期最好，但 WF Holdout -0.63 |
+| VnpyMaRsiConfirmStrategy | Research | — | — | MA+RSI 双确认，交易数减少 80%，回报持平 |
 | VnpyRsiStrategy | Rejected | 0.196 | -14.8% | NVDA 极少超卖，信号稀疏 |
-| MACD | Research | 0.980 | -12.1% | IC 最强 (+0.081)，动量效应 |
+| MACD | Research | 0.980 | -12.1% | NVDA IC 最强 (+0.081)，动量效应 |
 | ma_rsi_combo | Rejected | nan | 0% | 无信号产生 |
 
 ---
@@ -42,6 +44,14 @@
 - **NVDA 消融实验完成** — 结论：NVDA 不适合择时，所有策略跑输 B&H
 - **关键发现**: MACD IC (+0.081) 远优于 MA/RSI，NVDA 是动量股
 - **下一步**: 换标的 SPY/QQQ，修复 backtest.py 参数搜索 bug
+
+### 2026-06-02
+- **SPY + QQQ 消融实验完成** — SPY 最优参数 fast=5 slow=15, Sharpe=1.34
+- **修复 backtest.py 硬编码 bug** — `generate_signals` 支持 `strategy_params` kwargs
+- **OpenD 实时接入验证** — futu-api 直接连接，预热 + 实时订阅成功
+- **MA+RSI 双确认策略创建** — 利用 SPY RSI IC +0.103，入场增加 RSI 过滤器
+- **当前 SOTA** 切换为 **SPY MA Cross (5/15)**，等待明晚 OpenD 实盘验证
+- **顺序**: OpenD 实时验证 → RSI 双确认 → 实盘校准 → 再加新标的
 
 ---
 

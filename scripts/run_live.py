@@ -24,6 +24,7 @@ from strategies.vnpy_compat import BarData
 from strategies.vnpy_ma_cross import VnpyMaCrossStrategy
 from strategies.vnpy_macd import VnpyMacdStrategy
 from strategies.vnpy_rsi import VnpyRsiStrategy
+from strategies.vnpy_ma_rsi_confirm import VnpyMaRsiConfirmStrategy
 
 logger = logging.getLogger("run_live")
 
@@ -31,6 +32,7 @@ STRATEGY_REGISTRY = {
     "VnpyMaCrossStrategy": VnpyMaCrossStrategy,
     "VnpyMacdStrategy": VnpyMacdStrategy,
     "VnpyRsiStrategy": VnpyRsiStrategy,
+    "VnpyMaRsiConfirmStrategy": VnpyMaRsiConfirmStrategy,
 }
 
 
