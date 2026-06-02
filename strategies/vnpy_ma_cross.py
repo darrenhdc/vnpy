@@ -45,15 +45,16 @@ class VnpyMaCrossStrategy(CtaTemplate):
         """接收新 K 线。"""
         self._bars.append(bar)
 
-        # 更新均线缓存
+        # 更新均线缓存（fast 和 slow 独立维护长度）
         self.fast_ma.append(bar.close_price)
         self.slow_ma.append(bar.close_price)
         if len(self.fast_ma) > self.fast_window:
             self.fast_ma.pop(0)
+        if len(self.slow_ma) > self.slow_window:
             self.slow_ma.pop(0)
 
         # 数据不足
-        if len(self.fast_ma) < self.fast_window:
+        if len(self.fast_ma) < self.fast_window or len(self.slow_ma) < self.slow_window:
             return
 
         self.fast_ma_value = sum(self.fast_ma) / len(self.fast_ma)

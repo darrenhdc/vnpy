@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Dict, Any
 
 import numpy as np
 import pandas as pd
@@ -34,6 +34,7 @@ class BacktestResult:
     portfolio_df: pd.DataFrame
     trades_df: pd.DataFrame
     strategy_name: str = ""
+    strategy_params: Optional[Dict[str, Any]] = None
 
     @property
     def total_return_pct(self) -> float:
@@ -88,28 +89,92 @@ class BacktestResult:
         print(f"Trades:   {self.n_trades} ({self.n_buys}B/{self.n_sells}S)")
 
 
-def generate_signals(df: pd.DataFrame, strategy: str = "ma_cross") -> pd.Series:
-    """Generate buy/hold/sell signals. Returns Series of int: 1=buy, 0=hold, -1=sell."""
+def _ensure_ma(df: pd.DataFrame, window: int) -> str:
+    """确保 DataFrame 有指定周期的 MA 列，返回列名。"""
+    col = f"ma{window}"
+    if col not in df.columns:
+        df[col] = df["close"].rolling(window, min_periods=1).mean()
+    return col
+
+
+def generate_signals(
+    df: pd.DataFrame,
+    strategy: str = "ma_cross",
+    **kwargs: Any,
+) -> pd.Series:
+    """
+    Generate buy/hold/sell signals.
+    Returns Series of int: 1=buy, 0=hold, -1=sell.
+
+    Parameters
+    ----------
+    strategy : str
+        "ma_cross", "rsi", "macd", "ma_rsi_combo"
+    kwargs :
+        ma_cross: fast=5, slow=20
+        rsi: rsi_period=14, oversold=30, overbought=70
+        macd: fast=12, slow=26, signal=9
+        ma_rsi_combo: ma_period=50, oversold=30, overbought=70
+    """
     signals = pd.Series(0, index=df.index)
 
     if strategy == "ma_cross":
-        golden_cross = (df["ma5"] > df["ma20"]) & (df["ma5"].shift(1) <= df["ma20"].shift(1))
-        death_cross = (df["ma5"] < df["ma20"]) & (df["ma5"].shift(1) >= df["ma20"].shift(1))
+        fast = kwargs.get("fast", 5)
+        slow = kwargs.get("slow", 20)
+        fast_col = _ensure_ma(df, fast)
+        slow_col = _ensure_ma(df, slow)
+        golden_cross = (df[fast_col] > df[slow_col]) & (df[fast_col].shift(1) <= df[slow_col].shift(1))
+        death_cross = (df[fast_col] < df[slow_col]) & (df[fast_col].shift(1) >= df[slow_col].shift(1))
         signals[golden_cross] = 1
         signals[death_cross] = -1
 
     elif strategy == "rsi":
-        signals[df["rsi"] < 30] = 1
-        signals[df["rsi"] > 70] = -1
+        period = kwargs.get("rsi_period", 14)
+        oversold = kwargs.get("oversold", 30)
+        overbought = kwargs.get("overbought", 70)
+        # Ensure RSI exists
+        if "rsi" not in df.columns or kwargs.get("force_recalc", False):
+            delta = df["close"].diff()
+            gain = delta.clip(lower=0)
+            loss = (-delta).clip(lower=0)
+            avg_gain = gain.ewm(alpha=1 / period, adjust=False).mean()
+            avg_loss = loss.ewm(alpha=1 / period, adjust=False).mean()
+            rs = avg_gain / avg_loss.replace(0, float("nan"))
+            df["rsi"] = 100.0 - (100.0 / (1.0 + rs))
+        signals[df["rsi"] < oversold] = 1
+        signals[df["rsi"] > overbought] = -1
 
     elif strategy == "macd":
-        signals[(df["macd"] > df["macd_signal"]) & (df["macd"].shift(1) <= df["macd_signal"].shift(1))] = 1
-        signals[(df["macd"] < df["macd_signal"]) & (df["macd"].shift(1) >= df["macd_signal"].shift(1))] = -1
+        fast = kwargs.get("fast", 12)
+        slow = kwargs.get("slow", 26)
+        signal_period = kwargs.get("signal", 9)
+        # Ensure MACD exists
+        if "macd" not in df.columns or kwargs.get("force_recalc", False):
+            ema_fast = df["close"].ewm(span=fast, adjust=False).mean()
+            ema_slow = df["close"].ewm(span=slow, adjust=False).mean()
+            df["macd"] = ema_fast - ema_slow
+            df["macd_signal"] = df["macd"].ewm(span=signal_period, adjust=False).mean()
+        cross_up = (df["macd"] > df["macd_signal"]) & (df["macd"].shift(1) <= df["macd_signal"].shift(1))
+        cross_down = (df["macd"] < df["macd_signal"]) & (df["macd"].shift(1) >= df["macd_signal"].shift(1))
+        signals[cross_up] = 1
+        signals[cross_down] = -1
 
     elif strategy == "ma_rsi_combo":
-        bull = df["close"] > df["ma50"]
-        signals[(bull) & (df["rsi"] < 30)] = 1
-        signals[(~bull) & (df["rsi"] > 70)] = -1
+        ma_period = kwargs.get("ma_period", 50)
+        oversold = kwargs.get("oversold", 30)
+        overbought = kwargs.get("overbought", 70)
+        ma_col = _ensure_ma(df, ma_period)
+        if "rsi" not in df.columns:
+            delta = df["close"].diff()
+            gain = delta.clip(lower=0)
+            loss = (-delta).clip(lower=0)
+            avg_gain = gain.ewm(alpha=1 / 14, adjust=False).mean()
+            avg_loss = loss.ewm(alpha=1 / 14, adjust=False).mean()
+            rs = avg_gain / avg_loss.replace(0, float("nan"))
+            df["rsi"] = 100.0 - (100.0 / (1.0 + rs))
+        bull = df["close"] > df[ma_col]
+        signals[(bull) & (df["rsi"] < oversold)] = 1
+        signals[(~bull) & (df["rsi"] > overbought)] = -1
 
     return signals
 
@@ -119,10 +184,14 @@ def run_backtest(
     params: Optional[BacktestParams] = None,
     strategy: str = "ma_cross",
     symbol: str = "AAPL",
+    strategy_params: Optional[Dict[str, Any]] = None,
 ) -> BacktestResult:
-    """Vectorized single-asset backtest. Signal on day t, execute on day t+1 open."""
+    """
+    Vectorized single-asset backtest. Signal on day t, execute on day t+1 open.
+    """
     params = params or BacktestParams()
-    signals = generate_signals(df, strategy)
+    strategy_params = strategy_params or {}
+    signals = generate_signals(df, strategy, **strategy_params)
 
     cash = params.initial_cash
     shares: float = 0.0
@@ -177,6 +246,7 @@ def run_backtest(
         portfolio_df=pd.DataFrame(portfolio_rows),
         trades_df=pd.DataFrame(trade_rows) if trade_rows else pd.DataFrame(columns=["date","side","price","shares","value","fee","strategy"]),
         strategy_name=f"{symbol}_{strategy}",
+        strategy_params=strategy_params,
     )
 
 

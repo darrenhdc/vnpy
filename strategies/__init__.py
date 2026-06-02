@@ -1,16 +1,16 @@
-# 策略包更新
-from .base_strategy import BaseStrategy
-from .core import FeatureEngine, SignalBuffer, StateTracker
-from .registry import StrategyRegistry
-from .moving_average_cross import MovingAverageCrossStrategy
-from .rsi_strategy import RsiStrategy
+# strategies package (vnpy CtaTemplate 兼容层)
+from .vnpy_compat import CtaTemplate, BarData, TickData, OrderData, TradeData
+from .vnpy_ma_cross import VnpyMaCrossStrategy
+from .vnpy_macd import VnpyMacdStrategy
+from .vnpy_rsi import VnpyRsiStrategy
 
 __all__ = [
-    "BaseStrategy",
-    "FeatureEngine",
-    "SignalBuffer",
-    "StateTracker",
-    "StrategyRegistry",
-    "MovingAverageCrossStrategy",
-    "RsiStrategy",
+    "CtaTemplate",
+    "BarData",
+    "TickData",
+    "OrderData",
+    "TradeData",
+    "VnpyMaCrossStrategy",
+    "VnpyMacdStrategy",
+    "VnpyRsiStrategy",
 ]

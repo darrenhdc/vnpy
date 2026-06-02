@@ -11,7 +11,7 @@
 
 ## 当前状态（2026-06-02）
 
-**P0 + P1 阶段完成。** 框架骨架 + 研究流水线 + 策略插件架构 + SOTA 追踪 + Heartbeat 监控 + CLI 工具 + Futu OpenD 实时行情接入全部就绪。OpenD 已登录，实时行情可接收，真实下单接口已就绪（待解锁）。
+**vnpy 迁移 + 消融实验完成。** 执行层已迁移到 vnpy CtaTemplate 兼容层（`strategies/vnpy_compat.py`），研究层完整保留。NVDA/SPY/QQQ 单资产消融实验已产出，MACD 策略已创建，OpenD 实时行情接入已验证。
 
 ## 项目进度锚点
 
@@ -20,37 +20,34 @@
 | # | 项目 | 位置 | 说明 |
 |---|------|------|------|
 | 1 | 配置管理 | `config/settings.py` | YAML 统一配置 + SIMULATE 强制检查 |
-| 2 | 数据库 | `data/database.py` | SQLite 7 表（bars/signals/orders/trades/positions/snapshots/risk） |
-| 3 | 数据下载 | `data/yahoo_feeder.py` | Yahoo Finance 历史数据（1m~1mo） |
-| 4 | 实时行情 | `data/live_engine.py` | **futu-api 直接连接 OpenD**，vn.py 兼容层保留，自动降级 mock |
-| 5 | 风控引擎 | `risk/risk_engine.py` | 8 项检查规则，回测冷却兼容 bar_time |
-| 6 | 策略基类 | `strategies/base_strategy.py` | ABC 抽象框架，按金额下单，dry_run / 真实 Futu 下单双模式 |
-| 7 | MA 交叉策略 | `strategies/moving_average_cross.py` | 金叉买死叉卖，已注册到 registry |
-| 8 | RSI 策略 | `strategies/rsi_strategy.py` | 超买超卖，已注册到 registry |
-| 9 | 回测脚本 | `scripts/backtest.py` | Yahoo 数据回放 + PnL / 胜率 / MaxDD 分析 |
-| 10 | 健康检查 | `monitor/healthcheck.py` | OpenD 端口可达性检查 |
-| 11 | 单元测试 | `tests/` | 4 个 pytest 测试文件，13/13 通过 |
-| 12 | 研究流水线 | `research/data_loader.py` + `research/backtest.py` | 向量化特征工程 + 回测引擎 |
-| 13 | Paper Trading | `scripts/run_headless.py` | dry_run 模式 + 实时引擎占位，**支持 OpenD 预热 + 实时订阅** |
-| 14 | **策略插件架构** | `strategies/registry.py` + `strategies/core.py` | `@register` 装饰器 + FeatureEngine/SignalBuffer/StateTracker |
-| 15 | **SOTA 追踪** | `research/SOTA.md` + `research/TEMPLATE.md` | 当前 SOTA / 候选池 / 演化史 / 8 阶段报告模板 |
-| 16 | **Heartbeat 监控** | `monitor/heartbeat.py` | CLI/JSON/HTTP 三种输出模式 |
-| 17 | **CLI 工具** | `scripts/sota.py` + `scripts/performance.py` + `scripts/archived.py` | SOTA 管理 / 绩效查询 / 归档清理 |
-| 18 | **真实 Futu 下单** | `strategies/base_strategy.py` `_send_order()` | `OpenSecTradeContext.place_order()` 已接入，**待 OpenD 解锁密码** |
+| 2 | 数据库 | `data/database.py` | SQLite 7 表 |
+| 3 | 数据下载 | `data/yahoo_feeder.py` | Yahoo Finance 历史数据 |
+| 4 | 实时行情 | `scripts/run_live.py` | **futu-api 直接连接 OpenD**，预热 + 实时订阅 |
+| 5 | 策略基类 | `strategies/vnpy_compat.py` | **vnpy CtaTemplate 轻量兼容层**，支持 buy/sell/pos/on_trade |
+| 6 | MA 交叉策略 | `strategies/vnpy_ma_cross.py` | 继承 CtaTemplate，fast/slow 可配置 |
+| 7 | RSI 策略 | `strategies/vnpy_rsi.py` | 继承 CtaTemplate，oversold/overbought 可配置 |
+| 8 | MACD 策略 | `strategies/vnpy_macd.py` | 继承 CtaTemplate，fast/slow/signal 可配置 |
+| 9 | 回测引擎 | `research/backtest.py` | **参数搜索 bug 已修复**，generate_signals 支持 kwargs |
+| 10 | Walk-Forward | `research/walk_forward.py` | 18m/3m WF + holdout 验证 |
+| 11 | 因子 IC | `research/factor_ic.py` | 滚动 Spearman IC / IR / 正相关占比 |
+| 12 | 消融实验 | `research/reports/` | NVDA / SPY / QQQ 三份候选报告 |
+| 13 | SOTA 追踪 | `research/SOTA.md` | 当前 SOTA / 候选池 / 演化史 |
+| 14 | CLI 工具 | `scripts/sota.py` + `performance.py` + `archived.py` | SOTA 管理 / 绩效查询 / 归档清理 |
+| 15 | 单元测试 | `tests/` | 8/8 通过（配置 + 数据库 + 3 个策略信号） |
 
 ### 🟡 P2 待办
 
 | # | 项目 | 估时 | 说明 |
 |---|------|------|------|
-| 9 | **多因子 IC 验证** | ~2h | 对 MA/RSI/MACD 等做 rolling IC |
-| 10 | **Telegram 通知** | ~1h | 下单/风控事件推送 |
+| 9 | **多资产组合** | ~2h | SPY+QQQ+AAPL 组合策略，分散单一标的风险 |
+| 10 | **波动率过滤** | ~1h | ATR/RVOL 过滤器，只在高波动时段交易 |
 | 11 | **Regime 归因** | ~2h | 牛熊震荡分 regime 分析 |
 
 ## 研究 SOP（继承自 A02）
 
 1. **Idea** — 写清楚假设、预期盈利 regime、预期失败 regime
-2. **Research** — 用 `research/backtest.py` + `research/data_loader.py` 验证信号 IC
-3. **Parameter Search** — 小范围、假设驱动的网格搜索
+2. **Research** — 用 `research/backtest.py` + `research/factor_ic.py` 验证信号 IC
+3. **Parameter Search** — 小范围网格搜索，记录到报告
 4. **Walk-Forward** — 18m train / 3m test / 3m step / 12m holdout
 5. **Candidate Report** — 使用 `research/TEMPLATE.md` 标准格式产出到 `research/reports/`
 6. **Paper** — dry_run paper trading
@@ -71,20 +68,19 @@
 |------|------|
 | `config/settings.py` | 统一配置入口 |
 | `config/futu.yaml` | OpenD 连接参数 |
-| `config/risk.yaml` | 风控参数 |
-| `config/strategy.yaml` | 策略参数 |
-| `data/database.py` | SQLite 封装 |
-| `data/yahoo_feeder.py` | 历史数据 |
-| `data/live_engine.py` | **futu-api 实时行情** |
-| `strategies/base_strategy.py` | 策略基类（dry_run + 真实下单） |
-| `strategies/registry.py` | 策略注册表 |
-| `strategies/core.py` | 共享决策核心（FeatureEngine / SignalBuffer / StateTracker） |
-| `risk/risk_engine.py` | 风控引擎 |
-| `scripts/backtest.py` | 回测脚本 |
-| `scripts/run_headless.py` | 无头运行（OpenD 实时） |
+| `strategies/vnpy_compat.py` | **vnpy CtaTemplate 兼容层** |
+| `strategies/vnpy_ma_cross.py` | MA 交叉策略（vnpy 接口） |
+| `strategies/vnpy_macd.py` | MACD 策略（vnpy 接口） |
+| `strategies/vnpy_rsi.py` | RSI 策略（vnpy 接口） |
+| `research/data_loader.py` | 向量化特征工程 |
+| `research/backtest.py` | 向量化回测引擎 |
+| `research/walk_forward.py` | Walk-Forward 验证 |
+| `research/factor_ic.py` | 因子滚动 IC |
+| `research/SOTA.md` | SOTA 追踪 |
+| `research/TEMPLATE.md` | 候选报告模板 |
+| `scripts/run_live.py` | **实时运行（OpenD）** |
 | `scripts/sota.py` | SOTA 管理 CLI |
 | `scripts/performance.py` | 绩效查询 CLI |
 | `scripts/archived.py` | 归档管理 CLI |
 | `monitor/heartbeat.py` | Heartbeat 健康检查 |
-| `research/SOTA.md` | SOTA 追踪 |
-| `research/TEMPLATE.md` | 候选报告模板 |
+| `_archived/` | 旧自建引擎归档 |

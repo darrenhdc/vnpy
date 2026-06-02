@@ -1,9 +1,7 @@
 # =============================================================================
 # 测试: 配置读取
 # =============================================================================
-import os
 import sys
-import pytest
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -25,7 +23,6 @@ class TestConfig:
 
         strategy = load_config("strategy")
         assert strategy is not None
-        assert "moving_average_cross" in strategy
 
     def test_app_config_singleton(self):
         cfg1 = get_app_config()
@@ -39,6 +36,7 @@ class TestConfig:
         original_env = cfg.futu.get("environment")
         cfg.futu["environment"] = "REAL"
 
+        import pytest
         with pytest.raises(SystemExit) as exc_info:
             cfg.ensure_simulate()
         assert exc_info.value.code == 1
