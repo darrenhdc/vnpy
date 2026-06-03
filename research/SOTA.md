@@ -10,16 +10,15 @@
 | 属性 | 值 |
 |------|-----|
 | **策略名** | VnpyMaRsiConfirmStrategy |
-| **版本** | v1.2.0 — MA+RSI 非对称卖出过滤 |
-| **描述** | 金叉即买 + 死叉+RSI>40才卖，日级，long-only |
+| **版本** | v1.3.0 — ATR 仓位管理 |
+| **描述** | 金叉即买 + 死叉+RSI>40才卖 + ATR 波动调节仓位，日级，long-only |
 | **标的** | US.SPY |
-| **Sharpe** | 1.46 (全周期回测) |
-| **WF Holdout** | 2.10 (12m holdout) |
-| **MaxDD** | -4.4% |
-| **Ann.Ret** | +27.0% |
-| **胜率** | 32B/33S |
-| **策略逻辑** | 对称 RSI 过滤器无效（Sharpe 低于纯 MA）。关键突破：只过滤卖出端 |
-| **活跃状态** | **Paper Trading** — 等待明晚 OpenD 实时验证 |
+| **Sharpe** | 1.63 (全周期回测) |
+| **WF Holdout** | 2.10 (12m holdout, 无退化) |
+| **MaxDD** | -3.3% |
+| **Ann.Ret** | +27.7% |
+| **ATR 参数** | LB=14, 高波>1.5x→33%仓, 低波<0.8x→2x仓 |
+| **活跃状态** | **Paper Trading** — 等待 OpenD 实时验证 |
 | **上线日期** | 2026-06-04 |
 
 ---
@@ -28,12 +27,12 @@
 
 | 策略 | 状态 | Sharpe | MaxDD | 说明 |
 |------|------|--------|-------|------|
-| **VnpyMaRsiConfirmStrategy** | **Paper** | **1.46** | **-4.4%** | 非对称卖出过滤，WF 2.10，**升级为 SOTA** |
+| **VnpyMaRsiConfirmStrategy** | **Paper** | **1.63** | **-3.3%** | ATR 仓位管理，WF 2.10，**当前 SOTA** |
+| VnpyMaRsiConfirmStrategy | Archived | 1.46 | -4.4% | v1.2.0 非对称，被 v1.3.0 ATR 取代 |
 | VnpyMaCrossStrategy | Archived | 1.34 | -10.2% | SPY MA Cross (5/15)，被 v1.2.0 取代 |
-| VnpyMaCrossStrategy | Research | 1.058 | -11.8% | NVDA 全周期最好，但 WF Holdout -0.63 |
-| VnpyRsiStrategy | Rejected | 0.196 | -14.8% | NVDA 极少超卖，信号稀疏 |
-| MACD | Research | 0.980 | -12.1% | NVDA IC 最强 (+0.081)，动量效应 |
-| ma_rsi_combo | Rejected | nan | 0% | 无信号产生 |
+| VnpyMaCrossStrategy | Rejected | 1.058 | -11.8% | NVDA WF Holdout -0.63 |
+| Long-Short MA Cross | Rejected | 0.813 | -5.3% | SPY 做空系统性亏损 |
+| MACD + RSI | Rejected | 0.675 | -7.6% | MACD 太慢，不敌 MA Cross |
 
 ---
 
@@ -65,6 +64,16 @@
 - **逻辑**：上升趋势中金叉应无条件入场。死叉常发生在超卖回调，此时不应卖
 - **WF Holdout: Sharpe 2.096**（1.57x SOTA），12 个月 out-of-sample 验证通过
 - **VnpyMaRsiConfirmStrategy v1.2.0 升级为 SOTA**
+
+### 2026-06-04 — #3, #4, #2 打榜全记录
+
+- **#3 Long-Short MA Cross 全线失败** — 纯 LS Sharpe 0.813, LS+RSI 1.109, 择时做空退化为 long-only
+- **#4 MACD+RSI 不敌 SOTA** — MACD 太慢 (Sharpe 0.675 vs MA Cross 1.337)
+- **#2 ATR 仓位管理突破** — Binary: 高波>1.5x→33%仓, 低波<0.8x→2x仓
+  - 全周期 Sharpe **1.626** (+0.170 vs v1.2.0)
+  - MaxDD **-3.3%** (-25% vs v1.2.0)
+  - WF Holdout 退化 = 0（holdout 期间无极端波动）
+- **v1.3.0 升级为 SOTA** — ATR 作为保险层，正常波动不伤，极端波动保护
 
 ---
 

@@ -11,7 +11,7 @@
 
 ## 当前状态（2026-06-04）
 
-**SOTA 已迭代到 v1.2.0 —— MA+RSI 非对称卖出过滤器。** 对称 RSI 过滤（买+卖都过滤）被证伪。关键突破：只过滤卖出端（死叉+RSI>40才卖），Sharpe 1.456 (+8.9% vs 旧 SOTA)，WF Holdout 2.096。策略代码已就绪，等待明晚 OpenD 实时验证。
+**SOTA v1.3.0 — MA Cross + RSI SellFilter + ATR 仓位管理。** Sharpe 1.63 (+11.7% vs v1.2.0)，MaxDD -3.3% (-25%)，WF Holdout 2.10。打榜 #1~#4 全部完成，仅 #1b 和 #2 有效。策略代码已就绪，等待 OpenD 实时验证。
 
 ## 项目进度锚点
 
@@ -27,22 +27,22 @@
 | 6 | MA 交叉策略 | `strategies/vnpy_ma_cross.py` | 继承 CtaTemplate，fast/slow 可配置 |
 | 7 | RSI 策略 | `strategies/vnpy_rsi.py` | 继承 CtaTemplate，oversold/overbought 可配置 |
 | 8 | MACD 策略 | `strategies/vnpy_macd.py` | 继承 CtaTemplate，fast/slow/signal 可配置 |
-| 9 | **MA+RSI SellFilter** | `strategies/vnpy_ma_rsi_confirm.py` | 非对称 RSI 卖出过滤，Sharpe 1.46，**新 SOTA** |
-| 10 | 回测引擎 | `research/backtest.py` | **参数搜索 bug 已修复**，generate_signals 支持 kwargs |
+| 9 | **MA+RSI+ATR** | `strategies/vnpy_ma_rsi_confirm.py` | 非对称 RSI 卖出过滤 + ATR 仓位管理，**新 SOTA v1.3.0** |
+| 10 | 回测引擎 | `research/backtest.py` | Long-Short 信号 + `ma_rsi_cross_confirm` 策略类型 |
 | 11 | Walk-Forward | `research/walk_forward.py` | 18m/3m WF + holdout 验证 |
-| 12 | 因子 IC | `research/factor_ic.py` | 滚动 Spearman IC / IR / 正相关占比 |
-| 13 | 消融实验 | `research/reports/` | NVDA / SPY / QQQ 三份候选报告 |
-| 14 | SOTA 追踪 | `research/SOTA.md` | 当前 SOTA / 候选池 / 演化史 |
-| 15 | CLI 工具 | `scripts/sota.py` + `performance.py` + `archived.py` | SOTA 管理 / 绩效查询 / 归档清理 |
-| 16 | 单元测试 | `tests/` | 8/8 通过（配置 + 数据库 + 3 个策略信号） |
+| 12 | 因子 IC | `research/factor_ic.py` | 滚动 Spearman IC / IR |
+| 13 | 消融实验 | `research/reports/` | NVDA / SPY / QQQ + ATR Sizing 共 5 份报告 |
+| 14 | SOTA 追踪 | `research/SOTA.md` | v1.0.0 → v1.3.0 三次迭代 |
+| 15 | Ops 设施 | `./sota` `./archived` `./performance` `./run-live` | 4 个快捷命令 |
+| 16 | 单元测试 | `tests/` | 7/8 通过（1 个数据库测试与本地状态相关） |
 
-### 🟡 P2 待办
+### 🟡 P1 待办
 
 | # | 项目 | 估时 | 说明 |
 |---|------|------|------|
-| 9 | **多资产组合** | ~2h | SPY+QQQ+AAPL 组合策略，分散单一标的风险 |
-| 10 | **波动率过滤** | ~1h | ATR/RVOL 过滤器，只在高波动时段交易 |
-| 11 | **Regime 归因** | ~2h | 牛熊震荡分 regime 分析 |
+| 1 | **OpenD 实盘验证** | 今晚 21:30 | `./run-live` 跑 SPY SOTA v1.3.0 |
+| 2 | **多资产组合** | ~2h | SPY+QQQ+AAPL 组合，分散风险 |
+| 3 | **Regime 归因** | ~2h | 牛熊震荡分 regime 分析 |
 
 ## 研究 SOP（继承自 A02）
 
