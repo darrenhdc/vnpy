@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# ./sota — SOTA 快捷操作入口
+# 用法:
+#   ./sota status         查看当前 SOTA 状态
+#   ./sota list           列出所有候选策略
+#   ./sota history        查看 SOTA 演化史
+
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+python "${PROJECT_ROOT}/scripts/sota.py" "$@"

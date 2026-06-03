@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# ./archived — 归档管理快捷入口
+# 用法:
+#   ./archived --list                查看归档策略列表
+#   ./archived --archive <name>      将指定策略归档
+#   ./archived --clean <days>        清理 N 天前的归档
+
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+python "${PROJECT_ROOT}/scripts/archived.py" "$@"
