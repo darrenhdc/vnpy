@@ -9,17 +9,18 @@
 
 | 属性 | 值 |
 |------|-----|
-| **策略名** | VnpyMaCrossStrategy |
-| **版本** | v1.1.0-SPY |
-| **描述** | 双均线交叉 (MA5/MA15)，日级，long-only |
+| **策略名** | VnpyMaRsiConfirmStrategy |
+| **版本** | v1.2.0 — MA+RSI 非对称卖出过滤 |
+| **描述** | 金叉即买 + 死叉+RSI>40才卖，日级，long-only |
 | **标的** | US.SPY |
-| **Sharpe** | 1.34 (全周期回测) |
-| **MaxDD** | -10.2% |
-| **Ann.Ret** | +14.6% |
-| **胜率** | 47% (18B/17S) |
-| **IC (20d)** | +0.103 (RSI), +0.081 (MACD) |
+| **Sharpe** | 1.46 (全周期回测) |
+| **WF Holdout** | 2.10 (12m holdout) |
+| **MaxDD** | -4.4% |
+| **Ann.Ret** | +27.0% |
+| **胜率** | 32B/33S |
+| **策略逻辑** | 对称 RSI 过滤器无效（Sharpe 低于纯 MA）。关键突破：只过滤卖出端 |
 | **活跃状态** | **Paper Trading** — 等待明晚 OpenD 实时验证 |
-| **上线日期** | 2026-06-02 (SPY 候选报告) |
+| **上线日期** | 2026-06-04 |
 
 ---
 
@@ -27,9 +28,9 @@
 
 | 策略 | 状态 | Sharpe | MaxDD | 说明 |
 |------|------|--------|-------|------|
-| VnpyMaCrossStrategy | Paper | 1.34 | -10.2% | **SPY** 全周期最好，WF Holdout +1.62 |
-| VnpyMaCrossStrategy | Research | 1.058 | -11.8% | **NVDA** 全周期最好，但 WF Holdout -0.63 |
-| VnpyMaRsiConfirmStrategy | Research | — | — | MA+RSI 双确认，交易数减少 80%，回报持平 |
+| **VnpyMaRsiConfirmStrategy** | **Paper** | **1.46** | **-4.4%** | 非对称卖出过滤，WF 2.10，**升级为 SOTA** |
+| VnpyMaCrossStrategy | Archived | 1.34 | -10.2% | SPY MA Cross (5/15)，被 v1.2.0 取代 |
+| VnpyMaCrossStrategy | Research | 1.058 | -11.8% | NVDA 全周期最好，但 WF Holdout -0.63 |
 | VnpyRsiStrategy | Rejected | 0.196 | -14.8% | NVDA 极少超卖，信号稀疏 |
 | MACD | Research | 0.980 | -12.1% | NVDA IC 最强 (+0.081)，动量效应 |
 | ma_rsi_combo | Rejected | nan | 0% | 无信号产生 |
@@ -52,6 +53,18 @@
 - **MA+RSI 双确认策略创建** — 利用 SPY RSI IC +0.103，入场增加 RSI 过滤器
 - **当前 SOTA** 切换为 **SPY MA Cross (5/15)**，等待明晚 OpenD 实盘验证
 - **顺序**: OpenD 实时验证 → RSI 双确认 → 实盘校准 → 再加新标的
+
+### 2026-06-04 — MA+RSI 非对称过滤器突破
+
+- **双确认对称过滤（买+卖都过滤）无效** — Sharpe 1.206 < SOTA 1.337
+- **参数搜索 25 组合** — 最优 buy_max=60/sell_min=40 仍不敌 SOTA
+- **关键发现**：RSI 在 SPY 上的价值**不是过滤买入，而是延迟卖出**
+- **非对称测试**：
+  - 只过滤买入 → 全部低于 SOTA
+  - **只过滤卖出（sell_min=40）→ Sharpe 1.456，+8.9% 击败 SOTA**
+- **逻辑**：上升趋势中金叉应无条件入场。死叉常发生在超卖回调，此时不应卖
+- **WF Holdout: Sharpe 2.096**（1.57x SOTA），12 个月 out-of-sample 验证通过
+- **VnpyMaRsiConfirmStrategy v1.2.0 升级为 SOTA**
 
 ---
 

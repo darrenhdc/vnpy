@@ -176,6 +176,27 @@ def generate_signals(
         signals[(bull) & (df["rsi"] < oversold)] = 1
         signals[(~bull) & (df["rsi"] > overbought)] = -1
 
+    elif strategy == "ma_rsi_cross_confirm":
+        fast = kwargs.get("fast", 5)
+        slow = kwargs.get("slow", 15)
+        rsi_period = kwargs.get("rsi_period", 14)
+        buy_max = kwargs.get("rsi_buy_max", 50)
+        sell_min = kwargs.get("rsi_sell_min", 50)
+        fast_col = _ensure_ma(df, fast)
+        slow_col = _ensure_ma(df, slow)
+        if "rsi" not in df.columns or kwargs.get("force_recalc", False):
+            delta = df["close"].diff()
+            gain = delta.clip(lower=0)
+            loss = (-delta).clip(lower=0)
+            avg_gain = gain.ewm(alpha=1 / rsi_period, adjust=False).mean()
+            avg_loss = loss.ewm(alpha=1 / rsi_period, adjust=False).mean()
+            rs = avg_gain / avg_loss.replace(0, float("nan"))
+            df["rsi"] = 100.0 - (100.0 / (1.0 + rs))
+        golden_cross = (df[fast_col] > df[slow_col]) & (df[fast_col].shift(1) <= df[slow_col].shift(1))
+        death_cross = (df[fast_col] < df[slow_col]) & (df[fast_col].shift(1) >= df[slow_col].shift(1))
+        signals[golden_cross & (df["rsi"] < buy_max)] = 1
+        signals[death_cross & (df["rsi"] > sell_min)] = -1
+
     return signals
 
 

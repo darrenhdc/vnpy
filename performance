@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# ./performance — 绩效查询快捷入口
+# 用法:
+#   ./performance               查看最近 7 天绩效
+#   ./performance --days 30     查看最近 30 天
+#   ./performance --summary     综合绩效摘要
+
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+python "${PROJECT_ROOT}/scripts/performance.py" "$@"

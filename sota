@@ -6,4 +6,10 @@
 #   ./sota history        查看 SOTA 演化史
 
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
-python "${PROJECT_ROOT}/scripts/sota.py" "$@"
+
+# 无参数时默认显示 status
+if [ $# -eq 0 ]; then
+    python "${PROJECT_ROOT}/scripts/sota.py" status
+else
+    python "${PROJECT_ROOT}/scripts/sota.py" "$@"
+fi

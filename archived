@@ -6,4 +6,10 @@
 #   ./archived --clean <days>        清理 N 天前的归档
 
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
-python "${PROJECT_ROOT}/scripts/archived.py" "$@"
+
+# 无参数时默认显示 list
+if [ $# -eq 0 ]; then
+    python "${PROJECT_ROOT}/scripts/archived.py" --list
+else
+    python "${PROJECT_ROOT}/scripts/archived.py" "$@"
+fi

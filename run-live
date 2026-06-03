@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# ./run-live — 实盘运行快捷入口
+# 用法:
+#   ./run-live --strategy VnpyMaCrossStrategy --symbol US.SPY --warmup 100
+#   ./run-live --strategy VnpyMaRsiConfirmStrategy --symbol US.SPY --warmup 100
+#   ./run-live --help            查看完整参数
+
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+python "${PROJECT_ROOT}/scripts/run_live.py" "$@"
