@@ -11,7 +11,7 @@
 
 ## 当前状态（2026-06-04）
 
-**SOTA v1.3.0 — MA Cross + RSI SellFilter + ATR 仓位管理。** Sharpe 1.63 (+11.7% vs v1.2.0)，MaxDD -3.3% (-25%)，WF Holdout 2.10。打榜 #1~#4 全部完成，仅 #1b 和 #2 有效。策略代码已就绪，等待 OpenD 实时验证。
+**SOTA v2.0.0 — 大重置。** 15 年数据验证发现 v1.2.0/v1.3.0 的 RSI/ATR 增强均为 5 年过拟合。当前 SOTA 回归纯 MA Cross (5/15)，15y Sharpe 0.888，265 笔交易。准备 OpenD 实时验证。
 
 ## 项目进度锚点
 
@@ -24,24 +24,22 @@
 | 3 | 数据下载 | `data/yahoo_feeder.py` | Yahoo Finance 历史数据 |
 | 4 | 实时行情 | `scripts/run_live.py` | **futu-api 直接连接 OpenD**，预热 + 实时订阅 |
 | 5 | 策略基类 | `strategies/vnpy_compat.py` | **vnpy CtaTemplate 轻量兼容层**，支持 buy/sell/pos/on_trade |
-| 6 | MA 交叉策略 | `strategies/vnpy_ma_cross.py` | 继承 CtaTemplate，fast/slow 可配置 |
-| 7 | RSI 策略 | `strategies/vnpy_rsi.py` | 继承 CtaTemplate，oversold/overbought 可配置 |
-| 8 | MACD 策略 | `strategies/vnpy_macd.py` | 继承 CtaTemplate，fast/slow/signal 可配置 |
-| 9 | **MA+RSI+ATR** | `strategies/vnpy_ma_rsi_confirm.py` | 非对称 RSI 卖出过滤 + ATR 仓位管理，**新 SOTA v1.3.0** |
-| 10 | 回测引擎 | `research/backtest.py` | Long-Short 信号 + `ma_rsi_cross_confirm` 策略类型 |
-| 11 | Walk-Forward | `research/walk_forward.py` | 18m/3m WF + holdout 验证 |
-| 12 | 因子 IC | `research/factor_ic.py` | 滚动 Spearman IC / IR |
-| 13 | 消融实验 | `research/reports/` | NVDA / SPY / QQQ + ATR Sizing 共 5 份报告 |
-| 14 | SOTA 追踪 | `research/SOTA.md` | v1.0.0 → v1.3.0 三次迭代 |
-| 15 | Ops 设施 | `./sota` `./archived` `./performance` `./run-live` | 4 个快捷命令 |
-| 16 | 单元测试 | `tests/` | 7/8 通过（1 个数据库测试与本地状态相关） |
+| 6 | MA 交叉策略 | `strategies/vnpy_ma_cross.py` | **当前 SOTA v2.0.0**，15 年验证坚固 |
+| 7 | MA+RSI+ATR | `strategies/vnpy_ma_rsi_confirm.py` | v1.2.0/v1.3.0 已过拟合，保留作为参考 |
+| 8 | 回测引擎 | `research/backtest.py` | 15 年数据支持，多策略类型 |
+| 9 | Walk-Forward | `research/walk_forward.py` | 18m/3m WF + holdout |
+| 10 | 因子 IC | `research/factor_ic.py` | 滚动 Spearman IC/IR |
+| 11 | 消融实验 | `research/reports/` | NVDA/SPY/QQQ + 打榜全记录 |
+| 12 | 15 年验证 | `research/validate_15y.py` | 发现 v1.2.0/v1.3.0 过拟合，触发大重置 |
+| 13 | SOTA 追踪 | `research/SOTA.md` | v1.0.0 → v2.0.0，4 次迭代 |
+| 14 | Ops 设施 | `./sota` `./archived` `./performance` `./run-live` | 4 个快捷命令 |
 
 ### 🟡 P1 待办
 
 | # | 项目 | 估时 | 说明 |
 |---|------|------|------|
-| 1 | **OpenD 实盘验证** | 今晚 21:30 | `./run-live` 跑 SPY SOTA v1.3.0 |
-| 2 | **多资产组合** | ~2h | SPY+QQQ+AAPL 组合，分散风险 |
+| 1 | **OpenD 实盘验证** | 今晚 21:30 | `./run-live` 跑 SPY MA Cross v2.0.0 |
+| 2 | **多资产 15 年验证** | ~2h | QQQ + AAPL 15 年回测，增加样本量 |
 | 3 | **Regime 归因** | ~2h | 牛熊震荡分 regime 分析 |
 
 ## 研究 SOP（继承自 A02）
