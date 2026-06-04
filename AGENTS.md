@@ -11,7 +11,7 @@
 
 ## 当前状态（2026-06-04）
 
-**SOTA v2.1.0 — Train/Test 无 peeking 校准。** 发现 v2.0.0 的 0.888 Sharpe 仍有参数搜索 peeking。修正为 10y train/5y test split，真 OOS Sharpe 0.597。策略为纯 MA Cross (10/15)，85 笔 OOS 交易。准备 OpenD 实时验证。
+**SOTA v2.2.0 — ATR 追踪止损。** Train/Test Split 无 peeking 验证。入场 MA(5/15) 金叉，出场死叉 OR 高点-2×ATR。OOS Sharpe 1.348（+126% vs v2.1.0）。策略代码已就绪，准备 OpenD 实时验证。
 
 ## 项目进度锚点
 

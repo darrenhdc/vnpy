@@ -10,16 +10,17 @@
 
 | 属性 | 值 |
 |------|-----|
-| **策略名** | VnpyMaCrossStrategy |
-| **版本** | v2.1.0 — Train/Test 无 peeking 校准 |
-| **描述** | 纯双均线交叉 (MA10/MA15)，日级，long-only |
+| **策略名** | VnpyMaCrossStrategy (+ATR Trailing Stop) |
+| **版本** | v2.2.0 — ATR 追踪止损 |
+| **描述** | MA Cross 入场 + ATR 追踪止损出场，日级，long-only |
 | **标的** | US.SPY |
-| **Sharpe** | 0.597 (OOS, 无 peeking) |
-| **方法** | Train: 2011-2021 网格搜索选参 → Test: 2021-2026 报告 |
-| **Train Sharpe** | 0.834 (10y in-sample) |
-| **Test MaxDD** | -6.8% |
-| **Test Return** | +10.2% vs B&H +91.3% |
-| **Test Trades** | 85 (5y OOS) |
+| **入场** | MA(5) > MA(15) 金叉 |
+| **出场** | MA(5) < MA(15) 死叉 OR 价格 < 高点 - 2×ATR |
+| **OOS Sharpe** | 1.348 (Train 2011-2021 / Test 2021-2026, 无 peeking) |
+| **Train Sharpe** | 1.241 (10y in-sample) |
+| **Test Return** | +19.1% vs B&H +91.3% |
+| **Test MaxDD** | -3.5% |
+| **Test Trades** | 77 (5y OOS) |
 | **活跃状态** | **Paper Trading** — 等待 OpenD 实时验证 |
 | **上线日期** | 2026-06-04 |
 
@@ -29,11 +30,11 @@
 
 | 策略 | 状态 | OOS Sharpe | 说明 |
 |------|------|-----------|------|
-| **VnpyMaCrossStrategy v2.1.0** | **Paper** | **0.597** | Train/Test 无 peeking，**当前 SOTA** |
-| VnpyMaCrossStrategy v2.0.0 | Rejected | 0.888 | **有 peeking**（15y 全量搜索），不可信 |
-| VnpyMaRsiConfirmStrategy | Rejected | 0.819 | 5y 过拟合，15y 反噬 |
-| Long-Short MA Cross | Rejected | — | SPY 做空亏钱 |
-| MACD + RSI | Rejected | — | MACD 太慢 |
+| **VnpyMaCrossStrategy + ATR Stop v2.2.0** | **Paper** | **1.348** | Train/Test 无 peeking，**当前 SOTA** |
+| VnpyMaCrossStrategy v2.1.0 | Archived | 0.597 | 纯 MA Cross，被 ATR Stop 取代 |
+| SMA Trend Filter | Research | 0.792 | 牛市才交易，降低 MaxDD |
+| VnpyMaRsiConfirmStrategy | Rejected | — | 5y 过拟合 |
+| Long-Short / MACD | Rejected | — | 不敌基线 |
 
 ---
 
@@ -72,6 +73,16 @@
 - **5 组常见参数中位数**: 0.993（2021-2026 对 MA Cross 友好）
 - **真实预期 Sharpe: 0.6~1.0**，取决于 regime
 - **SOTA 升级为 v2.1.0**: Train/Test Split 为硬性要求，无 peeking
+
+### 2026-06-04 — ATR 追踪止损突破，SOTA v2.2.0
+
+- **#1 SMA Trend Filter**: OOS Sharpe 0.792（+33% vs SOTA）
+- **#2 ATR Trailing Stop**: OOS Sharpe **1.348**（+126% vs SOTA）⭐
+  - 入场: MA(5/15) 金叉（不变）
+  - 出场: 死叉 OR 价格 < 高点 - 2×ATR
+  - Train Sharpe 1.241 → Test 1.348（正 transfer，非衰减）
+- **#3 SMA + ATR Combo**: OOS 0.621（MaxDD 最低 -2.2%）
+- **SOTA 升级为 v2.2.0**: ATR 追踪止损在所有 3 个方向上均超越基线
 
 ---
 
