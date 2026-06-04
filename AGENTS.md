@@ -11,7 +11,7 @@
 
 ## 当前状态（2026-06-04）
 
-**SOTA v2.0.0 — 大重置。** 15 年数据验证发现 v1.2.0/v1.3.0 的 RSI/ATR 增强均为 5 年过拟合。当前 SOTA 回归纯 MA Cross (5/15)，15y Sharpe 0.888，265 笔交易。准备 OpenD 实时验证。
+**SOTA v2.1.0 — Train/Test 无 peeking 校准。** 发现 v2.0.0 的 0.888 Sharpe 仍有参数搜索 peeking。修正为 10y train/5y test split，真 OOS Sharpe 0.597。策略为纯 MA Cross (10/15)，85 笔 OOS 交易。准备 OpenD 实时验证。
 
 ## 项目进度锚点
 
@@ -24,7 +24,7 @@
 | 3 | 数据下载 | `data/yahoo_feeder.py` | Yahoo Finance 历史数据 |
 | 4 | 实时行情 | `scripts/run_live.py` | **futu-api 直接连接 OpenD**，预热 + 实时订阅 |
 | 5 | 策略基类 | `strategies/vnpy_compat.py` | **vnpy CtaTemplate 轻量兼容层**，支持 buy/sell/pos/on_trade |
-| 6 | MA 交叉策略 | `strategies/vnpy_ma_cross.py` | **当前 SOTA v2.0.0**，15 年验证坚固 |
+| 6 | MA 交叉策略 | `strategies/vnpy_ma_cross.py` | **SOTA v2.1.0**，OOS Sharpe 0.597 |
 | 7 | MA+RSI+ATR | `strategies/vnpy_ma_rsi_confirm.py` | v1.2.0/v1.3.0 已过拟合，保留作为参考 |
 | 8 | 回测引擎 | `research/backtest.py` | 15 年数据支持，多策略类型 |
 | 9 | Walk-Forward | `research/walk_forward.py` | 18m/3m WF + holdout |

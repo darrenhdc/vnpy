@@ -1,8 +1,8 @@
 # SOTA 追踪（State of the Art）
 
-> **规则：所有新策略必须先经过 15 年数据回测验证 + WF，才能挑战当前 SOTA。**
+> **规则：所有新策略必须先经过 10y train / 5y test OOS 验证（无 peeking），才能挑战当前 SOTA。**
 > 继承自 A02 cbBTC 项目标准。
-> **v1.2.0/v1.3.0 教训：5 年窗口的优化是过拟合。15 年验证为硬性要求。**
+> **v1.2.0/v1.3.0 教训：参数搜索在全量数据上做 = peeking。Train/Test Split 为硬性要求。**
 
 ---
 
@@ -11,14 +11,15 @@
 | 属性 | 值 |
 |------|-----|
 | **策略名** | VnpyMaCrossStrategy |
-| **版本** | v2.0.0 — 15 年校准 |
-| **描述** | 纯双均线交叉 (MA5/MA15)，日级，long-only，无附加过滤器 |
+| **版本** | v2.1.0 — Train/Test 无 peeking 校准 |
+| **描述** | 纯双均线交叉 (MA10/MA15)，日级，long-only |
 | **标的** | US.SPY |
-| **Sharpe** | 0.888 (15 年回测) |
-| **MaxDD** | -6.4% |
-| **Ann.Ret** | +50.4% |
-| **Trades** | 265 (15 年) |
-| **B&H** | +662.8% (15 年) |
+| **Sharpe** | 0.597 (OOS, 无 peeking) |
+| **方法** | Train: 2011-2021 网格搜索选参 → Test: 2021-2026 报告 |
+| **Train Sharpe** | 0.834 (10y in-sample) |
+| **Test MaxDD** | -6.8% |
+| **Test Return** | +10.2% vs B&H +91.3% |
+| **Test Trades** | 85 (5y OOS) |
 | **活跃状态** | **Paper Trading** — 等待 OpenD 实时验证 |
 | **上线日期** | 2026-06-04 |
 
@@ -26,12 +27,12 @@
 
 ## 候选策略池
 
-| 策略 | 状态 | 15y Sharpe | 说明 |
+| 策略 | 状态 | OOS Sharpe | 说明 |
 |------|------|-----------|------|
-| **VnpyMaCrossStrategy (SPY)** | **Paper** | **0.888** | 纯 MA Cross，15 年唯一跨周期成立，**当前 SOTA** |
-| VnpyMaRsiConfirmStrategy | Rejected | 0.838 | RSI+ATR 在 5y 上有效，15y 上**反噬**（过拟合） |
-| VnpyMaCrossStrategy (NVDA) | Rejected | — | WF Holdout -0.63，标的本身不适合择时 |
-| Long-Short MA Cross | Rejected | — | SPY 做空系统性亏损 |
+| **VnpyMaCrossStrategy v2.1.0** | **Paper** | **0.597** | Train/Test 无 peeking，**当前 SOTA** |
+| VnpyMaCrossStrategy v2.0.0 | Rejected | 0.888 | **有 peeking**（15y 全量搜索），不可信 |
+| VnpyMaRsiConfirmStrategy | Rejected | 0.819 | 5y 过拟合，15y 反噬 |
+| Long-Short MA Cross | Rejected | — | SPY 做空亏钱 |
 | MACD + RSI | Rejected | — | MACD 太慢 |
 
 ---
@@ -61,6 +62,16 @@
 - **SOTA 重置为 v2.0.0** — VnpyMaCrossStrategy, pure MA Cross (5/15)
 - **新规则**: 所有候选策略必须通过 15 年数据验证，否则不能挑战 SOTA
 - **样本量**: 65 笔 → 265 笔，统计显著性 4x 提升
+
+### 2026-06-04 — peeking 修正：Train/Test Split
+
+- **v2.0.0 的 0.888 仍然有 peeking** — 12 组参数在 15 年全量数据上挑了最好的
+- **补丁**: 10 年 train (2011-2021) 选参 → 5 年 test (2021-2026) 报告
+- **Train 最优**: fast=10/slow=15（非 5/15）
+- **OOS 真 Sharpe: 0.597**（28% train→test 衰减）
+- **5 组常见参数中位数**: 0.993（2021-2026 对 MA Cross 友好）
+- **真实预期 Sharpe: 0.6~1.0**，取决于 regime
+- **SOTA 升级为 v2.1.0**: Train/Test Split 为硬性要求，无 peeking
 
 ---
 
