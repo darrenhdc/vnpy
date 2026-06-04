@@ -1,15 +1,130 @@
 #!/usr/bin/env bash
-# ./archived — 归档管理快捷入口
-# 用法:
-#   ./archived --list                查看归档策略列表
-#   ./archived --archive <name>      将指定策略归档
-#   ./archived --clean <days>        清理 N 天前的归档
+# ./archived — SPY 美股策略演化表 + 时间线
+set -euo pipefail
 
-PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+C_BOLD='\033[1m'; C_GREEN='\033[32m'; C_RED='\033[31m'
+C_YELLOW='\033[33m'; C_CYAN='\033[36m'; C_DIM='\033[2m'; C_MAGENTA='\033[35m'; C_RESET='\033[0m'
 
-# 无参数时默认显示 list
-if [ $# -eq 0 ]; then
-    python "${PROJECT_ROOT}/scripts/archived.py" --list
-else
-    python "${PROJECT_ROOT}/scripts/archived.py" "$@"
-fi
+REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
+SOTA_MD="$REPO_ROOT/research/SOTA.md"
+
+echo ""
+echo -e "${C_BOLD}${C_MAGENTA}════════════════════════════════════════════════════════════════${C_RESET}"
+echo -e "${C_BOLD}  SPY 美股策略 — 演化表${C_RESET}"
+echo -e "${C_BOLD}${C_MAGENTA}════════════════════════════════════════════════════════════════${C_RESET}"
+echo ""
+
+python3 - "$SOTA_MD" <<'PYEOF'
+import re, sys
+
+with open(sys.argv[1]) as f:
+    text = f.read()
+
+def clean(v):
+    return v.strip().replace("**","").replace("*","").replace("−","-")
+
+def clr(v, w=8):
+    v = clean(v)
+    if v.startswith('+'): return f"\033[32m{v:>{w}s}\033[0m"
+    if v.startswith('-'): return f"\033[31m{v:>{w}s}\033[0m"
+    return f"{v:>{w}s}"
+
+# ── 1. SOTA row ──
+sota_m = re.search(r'## 当前 SOTA.*?\n\n(.*?)\n\n---', text, re.DOTALL)
+sota_fields = {}
+if sota_m:
+    rows = re.findall(r'\|\s*\**(.+?)\**\s*\|\s*(.+?)\s*\|', sota_m.group(1))
+    sota_fields = {clean(k): clean(v) for k, v in rows}
+
+sota_name = sota_fields.get("策略名", "VnpyMaRsiConfirmStrategy")
+sota_ver  = sota_fields.get("版本", "v1.3.0")
+sota_sh   = sota_fields.get("Sharpe", "1.63").split()[0]  # "1.63 (全周期)" → "1.63"
+sota_dd   = sota_fields.get("MaxDD", "-3.3%")
+sota_note = sota_fields.get("描述", sota_ver)
+
+# ── 2. Candidate pool ──
+pool_m = re.search(r'## 候选策略池.*?\n\n(.*?)\n\n---', text, re.DOTALL)
+pool_rows = []
+if pool_m:
+    for line in pool_m.group(1).strip().split('\n'):
+        m = re.match(r'\|\s*\**(.+?)\**\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|', line)
+        if m:
+            name, status, sharpe, maxdd, note = m.groups()
+            name_c = clean(name); status_c = clean(status)
+            # Skip header row and empty entries
+            if name_c in ("策略", "------", ""): continue
+            if "---" in name_c: continue
+            pool_rows.append((name_c, status_c, clean(sharpe), clean(maxdd), clean(note)))
+
+# ── 3. Print ──
+
+HDR = "  {n:<30s}  {s:>10s}  {sh:>7s}  {dd:>7s}  {note}"
+print(HDR.format(
+    n=f"\033[1m{'Strategy':30s}\033[0m",
+    s=f"\033[1m{'Status':>10s}\033[0m",
+    sh=f"\033[1m{'Sharpe':>7s}\033[0m",
+    dd=f"\033[1m{'MaxDD':>7s}\033[0m",
+    note=f"\033[1m{'Note'}\033[0m",
+))
+SEP = f"  {'─'*30}  {'─'*10}  {'─'*7}  {'─'*7}  {'─'*35}"
+print(SEP)
+
+# SOTA
+print(f"  \033[1m\033[33m🏆 {sota_name:<27s}\033[0m  \033[1m{'SOTA':>10s}\033[0m  \033[32m{sota_sh:>7s}\033[0m  \033[31m{sota_dd:>7s}\033[0m  {sota_note}")
+
+# Benchmarks
+print(f"  \033[2m  {'─'*28}\033[0m")
+BENCH = [
+    ("SPY B&H",     "0.51", "-25.0%", "5y passive"),
+    ("50/50 Rebal", "0.51", "-12.5%", "daily rebalance"),
+]
+for name, sh, dd, note in BENCH:
+    print(f"  \033[36m⚖️ {name:<27s}\033[0m  \033[2m{'benchmark':>10s}\033[0m  \033[2m{sh:>7s}\033[0m  \033[2m{dd:>7s}\033[0m  \033[2m{note}\033[0m")
+print(f"  \033[2m  {'─'*28}\033[0m")
+
+# Candidates
+for name, status, sh, dd, note in pool_rows:
+    if "SOTA" in status or status == "SOTA":
+        continue
+    if status == "Archived":
+        st_col = f"\033[2m{status:>10s}\033[0m"
+    elif status == "Rejected":
+        st_col = f"\033[31m{status:>10s}\033[0m"
+    elif status == "Paper":
+        st_col = f"\033[32m{status:>10s}\033[0m"
+    else:
+        st_col = f"{status:>10s}"
+    note_str = note[:38] if len(note) > 38 else note
+    print(f"  {name:<30s}  {st_col}  {clean(sh):>7s}  {clean(dd):>7s}  {note_str}")
+
+print()
+print(f"  \033[2m  Sharpe/MaxDD from full-history backtest. B&H for reference only.\033[0m")
+print(f"  \033[2m  All strategies long-only, single-asset SPY, daily bars.\033[0m")
+
+PYEOF
+
+# ── Timeline ──
+echo ""
+echo -e "${C_DIM}──────────────────────────────────────────────────────────────${C_RESET}"
+python3 - "$SOTA_MD" <<'PYEOF'
+import re, sys
+with open(sys.argv[1]) as f: text = f.read()
+m = re.search(r'## 演化史(.*?)(?=## SOP|\Z)', text, re.DOTALL)
+if m:
+    print(f"\033[1m  Evolution Timeline\033[0m")
+    body = m.group(1).strip()
+    current_date = ""
+    for line in body.split('\n'):
+        if line.startswith('### 20'):
+            current_date = line.replace('### ','')
+        elif line.startswith('- '):
+            if '**' in line:
+                line = line.replace('**','\033[1m',1).replace('**','\033[0m',1)
+                line = line.replace('**','\033[1m',1).replace('**','\033[0m',1)
+            print(f"  {line}")
+PYEOF
+
+echo ""
+echo -e "${C_DIM}──────────────────────────────────────────────────────────────${C_RESET}"
+echo -e "  ${C_CYAN}Current SOTA →${C_RESET} ${C_YELLOW}./sota${C_RESET}"
+echo -e "${C_BOLD}${C_MAGENTA}════════════════════════════════════════════════════════════════${C_RESET}"
