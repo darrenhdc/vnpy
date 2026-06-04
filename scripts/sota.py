@@ -28,15 +28,30 @@ def _read_sota() -> str:
 
 def cmd_status():
     content = _read_sota()
-    # 提取当前 SOTA 表格
     lines = content.split("\n")
-    in_table = False
+    # Print rules
     for line in lines:
-        if "当前 SOTA" in line:
-            in_table = True
-        if in_table:
+        if line.startswith("> "):
             print(line)
-            if line.strip() == "" and "策略名" not in line:
+        if "## 当前 SOTA" in line:
+            break
+
+    # Print SOTA header + table
+    in_table = False
+    seen_table = False
+    for line in lines:
+        if "## 当前 SOTA" in line:
+            in_table = True
+            continue
+        if in_table:
+            if line.startswith("|"):
+                seen_table = True
+                print(line)
+            elif seen_table and line.strip() == "":
+                break
+            elif not seen_table:
+                continue
+            else:
                 break
 
 
