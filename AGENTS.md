@@ -11,7 +11,7 @@
 
 ## 当前状态（2026-06-04）
 
-**SOTA v2.2.0 — ATR 追踪止损。** Train/Test Split 无 peeking 验证。入场 MA(5/15) 金叉，出场死叉 OR 高点-2×ATR。OOS Sharpe 1.348（+126% vs v2.1.0）。策略代码已就绪，准备 OpenD 实时验证。
+**SOTA v2.3.0 — 13 年逐年 WF 校准。** Pure MA Cross (10/15)。Expanding train / 1y test，13 个独立 OOS 年份。Mean Sharpe 0.874，正收益 10/13 年。参数 (10/15) 11/13 年一致。已移除 ATR Stop（单次 split vs 逐年 WF，后者更可信）。准备 OpenD 实时验证。
 
 ## 项目进度锚点
 

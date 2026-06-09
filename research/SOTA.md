@@ -1,8 +1,8 @@
 # SOTA 追踪（State of the Art）
 
-> **规则：所有新策略必须先经过 10y train / 5y test OOS 验证（无 peeking），才能挑战当前 SOTA。**
+> **规则：所有新策略必须通过 expanding train / 1y test 逐年 WF（至少 10 个 OOS 年份），才能挑战当前 SOTA。**
 > 继承自 A02 cbBTC 项目标准。
-> **v1.2.0/v1.3.0 教训：参数搜索在全量数据上做 = peeking。Train/Test Split 为硬性要求。**
+> **v1.2.0/v1.3.0 教训：参数搜索在全量数据上做 = peeking。逐年 WF 为硬性要求。**
 
 ---
 
@@ -10,17 +10,16 @@
 
 | 属性 | 值 |
 |------|-----|
-| **策略名** | VnpyMaCrossStrategy (+ATR Trailing Stop) |
-| **版本** | v2.2.0 — ATR 追踪止损 |
-| **描述** | MA Cross 入场 + ATR 追踪止损出场，日级，long-only |
+| **策略名** | VnpyMaCrossStrategy |
+| **版本** | v2.3.0 — 13 年逐年 WF 校准 |
+| **描述** | 纯双均线交叉 (MA10/MA15)，日级，long-only |
 | **标的** | US.SPY |
-| **入场** | MA(5) > MA(15) 金叉 |
-| **出场** | MA(5) < MA(15) 死叉 OR 价格 < 高点 - 2×ATR |
-| **OOS Sharpe** | 1.348 (Train 2011-2021 / Test 2021-2026, 无 peeking) |
-| **Train Sharpe** | 1.241 (10y in-sample) |
-| **Test Return** | +19.1% vs B&H +91.3% |
-| **Test MaxDD** | -3.5% |
-| **Test Trades** | 77 (5y OOS) |
+| **OOS 方法** | Expanding train → 1y test，13 个独立 OOS 年份 (2014-2026) |
+| **OOS Sharpe (mean)** | 0.874 |
+| **OOS Sharpe (median)** | 1.073 |
+| **OOS 正收益年** | 10/13 (77%) |
+| **OOS 负收益年** | 3/13 (2015, 2018, 2022 — 全为修正/熊市) |
+| **参数稳定性** | (10/15) 在 11/13 年中一致 |
 | **活跃状态** | **Paper Trading** — 等待 OpenD 实时验证 |
 | **上线日期** | 2026-06-04 |
 
@@ -30,11 +29,11 @@
 
 | 策略 | 状态 | OOS Sharpe | 说明 |
 |------|------|-----------|------|
-| **VnpyMaCrossStrategy + ATR Stop v2.2.0** | **Paper** | **1.348** | Train/Test 无 peeking，**当前 SOTA** |
-| VnpyMaCrossStrategy v2.1.0 | Archived | 0.597 | 纯 MA Cross，被 ATR Stop 取代 |
-| SMA Trend Filter | Research | 0.792 | 牛市才交易，降低 MaxDD |
-| VnpyMaRsiConfirmStrategy | Rejected | — | 5y 过拟合 |
-| Long-Short / MACD | Rejected | — | 不敌基线 |
+| **VnpyMaCrossStrategy v2.3.0** | **Paper** | **0.874** | 13 年逐年 WF，**当前 SOTA** |
+| VnpyMaCrossStrategy + ATR v2.2.0 | Archived | 1.348 | 单次 split OOS，样本较少 |
+| VnpyMaCrossStrategy v2.1.0 | Archived | 0.597 | 单次 split，参数 (10/15) |
+| SMA Trend Filter | Research | 0.792 | 降低 MaxDD |
+| 其他 (RSI/ATR/LS/MACD) | Rejected | — | 过拟合或不敌基线 |
 
 ---
 
@@ -83,6 +82,16 @@
   - Train Sharpe 1.241 → Test 1.348（正 transfer，非衰减）
 - **#3 SMA + ATR Combo**: OOS 0.621（MaxDD 最低 -2.2%）
 - **SOTA 升级为 v2.2.0**: ATR 追踪止损在所有 3 个方向上均超越基线
+
+### 2026-06-04 — 逐年 WF 验证，SOTA v2.3.0
+
+- **13 年逐年 Walk-Forward** (expanding train, 1y test)
+- Mean OOS Sharpe **0.874**, median **1.073**
+- 10/13 年正收益，3 年负（2015/2018/2022，全为市场回调）
+- **参数 (10/15) 在 11/13 年中一致** — 极强稳健性
+- v2.2.0 的 ATR Stop 是单次 split 结果，逐年 WF 更可信
+- **SOTA 回归纯 MA Cross (10/15)**，移除 ATR Stop
+- **结论**: 这是一个 Sharpe ~0.9、正收益概率 ~77% 的策略。不高，但真实
 
 ---
 
