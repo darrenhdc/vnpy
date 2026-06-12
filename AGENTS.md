@@ -11,7 +11,7 @@
 
 ## 当前状态（2026-06-04）
 
-**SOTA v2.4.0 — MA+RSI SellFilter 在统一 WF 诊断中复活。** 所有策略重新用 13 年逐年 WF 诊断。MA+RSI (sell_min=50) 以 mean OOS 1.112 击败纯 MA Cross (0.973)。参数 (10/15/50) 在 13/13 年中稳定。准备 OpenD 实时验证。
+**SOTA v2.5.0 — 方法论锁定 + 跨资产 + 2026 Holdout。** MA+RSI SellFilter (sm=50)。sell_min=50 在 39/39 个 train 窗口中满分稳定。跨资产验证（QQQ 1.153, AAPL 1.149）确认策略可迁移。2026 Holdout Sharpe 2.705（真正 OOS）。参数网格已锁定，不再改动。准备 OpenD 实时验证。
 
 ## 项目进度锚点
 

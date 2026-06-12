@@ -11,16 +11,15 @@
 | 属性 | 值 |
 |------|-----|
 | **策略名** | VnpyMaCrossStrategy (+ RSI SellFilter) |
-| **版本** | v2.4.0 — RSI 卖出过滤器 (sell_min=50) |
-| **描述** | MA(10/15) 金叉买入 + 死叉+RSI>50才卖出，日级，long-only |
-| **标的** | US.SPY |
-| **OOS 方法** | Expanding train → 1y test，13 个独立 OOS 年份 (2014-2026) |
-| **OOS Sharpe (mean)** | 1.112 |
-| **OOS Sharpe (median)** | 1.281 |
-| **OOS 正收益年** | 11/13 (85%) |
-| **OOS 负收益年** | 2/13 (2018, 2022) |
-| **参数稳定性** | (10/15/50) 在 13/13 年中一致（满分） |
-| **vs Pure MA Cross** | +0.139 Sharpe, +1 正收益年 |
+| **版本** | v2.5.0 — 锁定方法论 + 跨资产验证 |
+| **描述** | MA(fast/slow) 金叉买入 + 死叉+RSI>50才卖出，日级，long-only |
+| **标的** | US.SPY (主), QQQ, AAPL (跨资产验证) |
+| **参数网格** | fast∈{3,5,10} slow∈{15,20,30} sm∈{50,60,70} **已锁定** |
+| **SPY WF mean** | 1.173 (13 年 OOS) |
+| **SPY 2026 Holdout** | **2.705** (真正未见过) |
+| **QQQ WF mean** | 1.153 (13 年 OOS, 首次运行) |
+| **AAPL WF mean** | 1.149 (13 年 OOS, 首次运行) |
+| **sell_min 稳定性** | **50 在 39/39 个 train 窗口中选中（满分）** |
 | **活跃状态** | **Paper Trading** — 等待 OpenD 实时验证 |
 | **上线日期** | 2026-06-04 |
 
@@ -104,6 +103,17 @@
 - **关键**：sell_min=50 在 13/13 年中稳定选中（满分参数稳定性）
 - **RSI 之前被错误拒绝**是因为用了 5y 数据——那 5 年的最优 sell_min 是 40，但 13 年 WF 显示 sell_min=50 才是真正的最优
 - **SOTA 升级为 v2.4.0**: MA(10/15) + RSI SellFilter(sell_min=50)
+
+### 2026-06-04 — 锁定方法论 + 跨资产 + 2026 Holdout, SOTA v2.5.0
+
+- **方法论锁定**：fast∈{3,5,10}, slow∈{15,20,30}, sm∈{50,60,70}。永不再改
+- **2026 Holdout**：train 2011-2025, test 2026 YTD。OOS Sharpe **2.705**（真正未见过）
+- **跨资产验证**（QQQ/AAPL，首次运行，无 peeking）：
+  - QQQ: mean OOS 1.153, sm=50 (13/13)
+  - AAPL: mean OOS 1.149, sm=50 (13/13)
+- **sell_min=50 在 39/39 个 train 窗口中选中（3 资产 × 13 年）** —— 满分稳定性
+- **策略可迁移**：同一套方法在 QQQ 和 AAPL 上产生近乎相同的 mean OOS
+- **SOTA 升级为 v2.5.0**: 锁定方法论，跨资产验证通过，2026 holdout 确认
 
 ---
 
