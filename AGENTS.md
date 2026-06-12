@@ -11,7 +11,7 @@
 
 ## 当前状态（2026-06-04）
 
-**SOTA v2.3.0 — 13 年逐年 WF 校准。** Pure MA Cross (10/15)。Expanding train / 1y test，13 个独立 OOS 年份。Mean Sharpe 0.874，正收益 10/13 年。参数 (10/15) 11/13 年一致。已移除 ATR Stop（单次 split vs 逐年 WF，后者更可信）。准备 OpenD 实时验证。
+**SOTA v2.4.0 — MA+RSI SellFilter 在统一 WF 诊断中复活。** 所有策略重新用 13 年逐年 WF 诊断。MA+RSI (sell_min=50) 以 mean OOS 1.112 击败纯 MA Cross (0.973)。参数 (10/15/50) 在 13/13 年中稳定。准备 OpenD 实时验证。
 
 ## 项目进度锚点
 
@@ -24,15 +24,16 @@
 | 3 | 数据下载 | `data/yahoo_feeder.py` | Yahoo Finance 历史数据 |
 | 4 | 实时行情 | `scripts/run_live.py` | **futu-api 直接连接 OpenD**，预热 + 实时订阅 |
 | 5 | 策略基类 | `strategies/vnpy_compat.py` | **vnpy CtaTemplate 轻量兼容层**，支持 buy/sell/pos/on_trade |
-| 6 | MA 交叉策略 | `strategies/vnpy_ma_cross.py` | **SOTA v2.1.0**，OOS Sharpe 0.597 |
+| 6 | MA 交叉策略 | `strategies/vnpy_ma_cross.py` | **SOTA v2.4.0**，MA Cross + RSI SellFilter |
 | 7 | MA+RSI+ATR | `strategies/vnpy_ma_rsi_confirm.py` | v1.2.0/v1.3.0 已过拟合，保留作为参考 |
 | 8 | 回测引擎 | `research/backtest.py` | 15 年数据支持，多策略类型 |
-| 9 | Walk-Forward | `research/walk_forward.py` | 18m/3m WF + holdout |
+| 9 | Walk-Forward | `research/walk_forward.py` | 逐年 WF + holdout |
 | 10 | 因子 IC | `research/factor_ic.py` | 滚动 Spearman IC/IR |
 | 11 | 消融实验 | `research/reports/` | NVDA/SPY/QQQ + 打榜全记录 |
 | 12 | 15 年验证 | `research/validate_15y.py` | 发现 v1.2.0/v1.3.0 过拟合，触发大重置 |
-| 13 | SOTA 追踪 | `research/SOTA.md` | v1.0.0 → v2.0.0，4 次迭代 |
-| 14 | Ops 设施 | `./sota` `./archived` `./performance` `./run-live` | 4 个快捷命令 |
+| 13 | 统一 WF 诊断 | `research/wf_all_strategies.py` | RSI SellFilter 复活，sell_min=50 满分稳定 |
+| 14 | SOTA 追踪 | `research/SOTA.md` | v1.0.0 → v2.4.0，多次迭代 |
+| 15 | Ops 设施 | `./sota` `./archived` `./performance` `./run-live` | 4 个快捷命令 |
 
 ### 🟡 P1 待办
 

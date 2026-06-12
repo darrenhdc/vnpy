@@ -10,16 +10,17 @@
 
 | 属性 | 值 |
 |------|-----|
-| **策略名** | VnpyMaCrossStrategy |
-| **版本** | v2.3.0 — 13 年逐年 WF 校准 |
-| **描述** | 纯双均线交叉 (MA10/MA15)，日级，long-only |
+| **策略名** | VnpyMaCrossStrategy (+ RSI SellFilter) |
+| **版本** | v2.4.0 — RSI 卖出过滤器 (sell_min=50) |
+| **描述** | MA(10/15) 金叉买入 + 死叉+RSI>50才卖出，日级，long-only |
 | **标的** | US.SPY |
 | **OOS 方法** | Expanding train → 1y test，13 个独立 OOS 年份 (2014-2026) |
-| **OOS Sharpe (mean)** | 0.874 |
-| **OOS Sharpe (median)** | 1.073 |
-| **OOS 正收益年** | 10/13 (77%) |
-| **OOS 负收益年** | 3/13 (2015, 2018, 2022 — 全为修正/熊市) |
-| **参数稳定性** | (10/15) 在 11/13 年中一致 |
+| **OOS Sharpe (mean)** | 1.112 |
+| **OOS Sharpe (median)** | 1.281 |
+| **OOS 正收益年** | 11/13 (85%) |
+| **OOS 负收益年** | 2/13 (2018, 2022) |
+| **参数稳定性** | (10/15/50) 在 13/13 年中一致（满分） |
+| **vs Pure MA Cross** | +0.139 Sharpe, +1 正收益年 |
 | **活跃状态** | **Paper Trading** — 等待 OpenD 实时验证 |
 | **上线日期** | 2026-06-04 |
 
@@ -29,11 +30,10 @@
 
 | 策略 | 状态 | OOS Sharpe | 说明 |
 |------|------|-----------|------|
-| **VnpyMaCrossStrategy v2.3.0** | **Paper** | **0.874** | 13 年逐年 WF，**当前 SOTA** |
-| VnpyMaCrossStrategy + ATR v2.2.0 | Archived | 1.348 | 单次 split OOS，样本较少 |
-| VnpyMaCrossStrategy v2.1.0 | Archived | 0.597 | 单次 split，参数 (10/15) |
-| SMA Trend Filter | Research | 0.792 | 降低 MaxDD |
-| 其他 (RSI/ATR/LS/MACD) | Rejected | — | 过拟合或不敌基线 |
+| **MA+RSI SellFilter v2.4.0** | **Paper** | **1.112** | 13 年 WF，**当前 SOTA** |
+| Pure MA Cross v2.3.0 | Archived | 0.973 | 被 RSI 过滤器超越 |
+| MACD | Research | 0.831 | 统一 WF 后仍低于基线 |
+| 其他 (ATR/LS) | Rejected | — | — |
 
 ---
 
@@ -92,6 +92,18 @@
 - v2.2.0 的 ATR Stop 是单次 split 结果，逐年 WF 更可信
 - **SOTA 回归纯 MA Cross (10/15)**，移除 ATR Stop
 - **结论**: 这是一个 Sharpe ~0.9、正收益概率 ~77% 的策略。不高，但真实
+
+### 2026-06-04 — 统一 WF 重新诊断：RSI SellFilter 复活
+
+- **问题**：之前 RSI/ATR/MACD 的判断用了不同验证标准（5y/15y/single split），不公平
+- **方法**：所有策略统一用 13 年逐年 WF 重新诊断
+- **结果**：
+  - MA+RSI SellFilter: mean OOS **1.112**（11/13 年正）
+  - Pure MA Cross: mean OOS 0.973（10/13 年正）
+  - MACD: mean OOS 0.831（9/13 年正）
+- **关键**：sell_min=50 在 13/13 年中稳定选中（满分参数稳定性）
+- **RSI 之前被错误拒绝**是因为用了 5y 数据——那 5 年的最优 sell_min 是 40，但 13 年 WF 显示 sell_min=50 才是真正的最优
+- **SOTA 升级为 v2.4.0**: MA(10/15) + RSI SellFilter(sell_min=50)
 
 ---
 
